@@ -28,9 +28,9 @@ const Scene = dynamic(() => import("@/components/webgl/Scene"), { ssr: false });
 
 export default function Home() {
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [ats, setAts] = useState(false);
+  const [clean, setClean] = useState(false);
 
-  const toggleAts = useCallback(() => setAts((v) => !v), []);
+  const toggleClean = useCallback(() => setClean((v) => !v), []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -44,36 +44,36 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    document.body.dataset.ats = String(ats);
+    document.body.dataset.clean = String(clean);
     return () => {
-      delete document.body.dataset.ats;
+      delete document.body.dataset.clean;
     };
-  }, [ats]);
+  }, [clean]);
 
   return (
     <SmoothScroll>
       {/* Base wash, always present — the canvas layers over it. */}
-      <div className="field-fallback ats-hide" aria-hidden />
-      {!ats && (
+      <div className="field-fallback clean-hide" aria-hidden />
+      {!clean && (
         <>
           <BeatTracker />
           <Scene />
           <SecretKeys />
           <ConsoleGreeting />
           {/* Keeps copy legible over whatever the field is doing. */}
-          <div className="content-scrim ats-hide" aria-hidden />
+          <div className="content-scrim clean-hide" aria-hidden />
         </>
       )}
 
-      {!ats && <Preloader />}
+      {!clean && <Preloader />}
       <ScrollProgress />
       <CursorGlow />
       <Nav onOpenPalette={() => setPaletteOpen(true)} />
-      {!ats && <BeatRail />}
+      {!clean && <BeatRail />}
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
-        onToggleAts={toggleAts}
+        onToggleClean={toggleClean}
       />
 
       {/*
@@ -89,7 +89,7 @@ export default function Home() {
         <Contact />
       </main>
 
-      <Footer onToggleAts={toggleAts} ats={ats} />
+      <Footer onToggleClean={toggleClean} clean={clean} />
     </SmoothScroll>
   );
 }

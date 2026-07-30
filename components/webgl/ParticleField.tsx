@@ -4,6 +4,8 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { buildFormations, textFormation } from "@/lib/formations";
+import { NET_PARAM_SLOTS, NET_VEC4_COUNT } from "@/lib/mlp";
+import { netBridge } from "@/lib/netBridge";
 import { onSecret, secretDisplay, secretState } from "@/lib/secret";
 import { hasBeats, opacityFromStage, stageFromScroll } from "@/lib/beats";
 import { introState } from "@/lib/intro";
@@ -25,13 +27,18 @@ function shapeTransition(t: number): number {
   return eased;
 }
 
-export default function ParticleField({ count }: { count: number }) {
+export default function ParticleField({ count, tier }: { count: number; tier: string }) {
   const pointsRef = useRef<THREE.Points>(null);
   const { size, camera } = useThree();
 
   // Smoothed values so nothing snaps when scroll velocity spikes.
   const smooth = useRef({ stageF: 0, pointerX: 0, pointerY: 0, pointerAmt: 0, velocity: 0 });
   const secretMorph = useRef(0);
+  // Smoothed copy of the Lab's weights, so architecture and dataset changes
+  // morph the surface instead of teleporting it.
+  const netSmooth = useRef<Float32Array>(new Float32Array(NET_PARAM_SLOTS));
+  const netDepthSmooth = useRef(2);
+  const netPrimed = useRef(false);
 
   const geometry = useMemo(() => {
     const formations = buildFormations(count);
@@ -89,6 +96,13 @@ export default function ParticleField({ count }: { count: number }) {
         uColorCool: { value: new THREE.Color("#7b5cff") },
         uColorWarm: { value: new THREE.Color("#35e0f0") },
         uColorHot: { value: new THREE.Color("#dbe4ff") },
+        // The Lab's network, evaluated per particle. See lib/netBridge.
+        uNet: {
+          value: Array.from({ length: NET_VEC4_COUNT }, () => new THREE.Vector4()),
+        },
+        uNetMix: { value: 0 },
+        uNetDepth: { value: 2 },
+        uNetScale: { value: new THREE.Vector2(1, 1) },
       },
     });
   }, []);
@@ -237,6 +251,70 @@ export default function ParticleField({ count }: { count: number }) {
     // ── Scroll velocity feeds particle size, so the field "breathes" on scroll.
     s.velocity = THREE.MathUtils.damp(s.velocity, scrollState.velocity, 8, dt);
     u.uVelocity.value = s.velocity;
+
+    // ── The Lab's network drives the field around beat 04 (the Playground).
+    //
+    // Ramped rather than switched, so the field eases into being a decision
+    // surface and back out again. Held at zero on the low tier: the per-particle
+    // forward pass is ~150 multiply-adds and weak GPUs should not pay it.
+    const netTarget =
+      netBridge.ready && tier !== "low"
+        ? THREE.MathUtils.smoothstep(s.stageF, 3.45, 4.0) *
+          (1 - THREE.MathUtils.smoothstep(s.stageF, 4.6, 5.0))
+        : 0;
+    u.uNetMix.value = THREE.MathUtils.damp(u.uNetMix.value as number, netTarget, 4, dt);
+
+    if ((u.uNetMix.value as number) > 0.001) {
+      // Map world units onto the network's [-1, 1] training domain, using the
+      // visible plane so class regions are regions of the screen.
+      (u.uNetScale.value as THREE.Vector2).set(
+        1 / (visibleWidth / 2),
+        1 / (visibleHeight / 2),
+      );
+
+      /*
+        Follow the published weights smoothly rather than copying them.
+
+        Changing dataset or architecture discards the network and publishes fresh
+        random weights in one frame. Copying those straight in teleports all
+        42,000 particles from a trained boundary to a random one instantly — and
+        because prediction also drives depth, they physically pop. Easing through
+        weight space turns that snap into a ~0.4s morph.
+
+        First activation still snaps: interpolating up from an all-zero buffer
+        would put the network at p = 0.5 everywhere, lighting the entire screen
+        as one enormous boundary ridge on the way in.
+      */
+      const target = netBridge.params;
+      const held = netSmooth.current;
+
+      if (!netPrimed.current) {
+        held.set(target);
+        netDepthSmooth.current = netBridge.depth;
+        netPrimed.current = true;
+      } else {
+        // Frame-rate independent exponential approach.
+        const k = 1 - Math.exp(-7 * dt);
+        for (let i = 0; i < held.length; i++) {
+          held[i] += (target[i] - held[i]) * k;
+        }
+        netDepthSmooth.current +=
+          (netBridge.depth - netDepthSmooth.current) * (1 - Math.exp(-5 * dt));
+      }
+
+      u.uNetDepth.value = netDepthSmooth.current;
+
+      // Repack the smoothed parameters into the vec4 uniform block.
+      const vecs = u.uNet.value as THREE.Vector4[];
+      for (let i = 0; i < vecs.length; i++) {
+        const o = i * 4;
+        vecs[i].set(held[o] ?? 0, held[o + 1] ?? 0, held[o + 2] ?? 0, held[o + 3] ?? 0);
+      }
+    } else {
+      // Re-prime on the way back in, so returning to the Lab snaps rather than
+      // easing up from stale weights.
+      netPrimed.current = false;
+    }
 
     // Drift calms down during a morph so the formation stays legible.
     const morphActivity = 1 - Math.abs(u.uMorph.value * 2 - 1);

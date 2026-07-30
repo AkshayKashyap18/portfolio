@@ -23,7 +23,7 @@ export default function BeatRail() {
 
   return (
     <nav
-      className="ats-hide fixed top-1/2 right-6 z-40 hidden -translate-y-1/2 flex-col gap-1 xl:flex"
+      className="clean-hide fixed top-1/2 right-6 z-40 hidden -translate-y-1/2 flex-col gap-1 xl:flex"
       aria-label="Section progress"
     >
       {BEAT_IDS.map((id, i) => {

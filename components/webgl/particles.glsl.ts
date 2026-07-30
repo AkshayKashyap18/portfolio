@@ -34,16 +34,98 @@ uniform float uPointerRadius;
 uniform float uVelocity;
 uniform float uDrift;
 
+uniform vec4  uNet[45];        // packed MLP parameters, see lib/mlp NET_LAYOUT
+uniform float uNetMix;        // 0 = ignore the network, 1 = fully driven by it
+uniform float uNetDepth;      // hidden layer count: 0 (linear), 1, 2 or 3
+uniform vec2  uNetScale;      // world → the net's [-1,1] input domain
+
 varying float vHeat;
 varying float vTravel;
 varying float vDepth;
 varying float vTint;
 varying float vSparkle;
+varying float vNet;           // this particle's prediction, 0..1
+varying float vNetMix;
+varying float vRidge;         // proximity to the decision boundary
 
 ${SIMPLEX_3D}
 
 float easeInOutCubic(float t) {
   return t < 0.5 ? 4.0 * t * t * t : 1.0 - pow(-2.0 * t + 2.0, 3.0) / 2.0;
+}
+
+/* ── The network, evaluated per particle ──────────────────────────────────
+   Same parameters the Lab is training, read straight out of a uniform block.
+   Layout mirrors NET_LAYOUT in lib/mlp.ts and must not drift from it.
+
+   tanh is hand-rolled rather than built in: it only exists from GLSL ES 3.00,
+   and this material must survive compiling as 1.00 on a WebGL1 fallback. All
+   loop bounds are constant so the uniform indexing stays a constant-index
+   expression, which 1.00 also requires.
+   ───────────────────────────────────────────────────────────────────────── */
+float netAt(int i) {
+  return uNet[i / 4][i - (i / 4) * 4];
+}
+
+float tanhSafe(float x) {
+  float e = exp(-2.0 * clamp(x, -8.0, 8.0));
+  return (1.0 - e) / (1.0 + e);
+}
+
+float netEval(vec2 p) {
+  float h1[8];
+  for (int j = 0; j < 8; j++) {
+    float z = netAt(16 + j);
+    z += netAt(j * 2 + 0) * p.x;
+    z += netAt(j * 2 + 1) * p.y;
+    h1[j] = tanhSafe(z);
+  }
+
+  float h2[8];
+  for (int j = 0; j < 8; j++) {
+    float z = netAt(88 + j);
+    for (int i = 0; i < 8; i++) z += netAt(24 + j * 8 + i) * h1[i];
+    h2[j] = tanhSafe(z);
+  }
+
+  // Third hidden layer is zero-filled when the net is only two deep, so this
+  // evaluates to tanh(0) = 0 and contributes nothing.
+  float h3[8];
+  for (int j = 0; j < 8; j++) {
+    float z = netAt(160 + j);
+    for (int i = 0; i < 8; i++) z += netAt(96 + j * 8 + i) * h2[i];
+    h3[j] = tanhSafe(z);
+  }
+
+  // The output layer always sits in the final slot, so evaluate it against each
+  // possible last hidden layer and select with mixes rather than branches.
+  float bias = netAt(176);
+  float o1 = bias;
+  float o2 = bias;
+  float o3 = bias;
+  for (int i = 0; i < 8; i++) {
+    float w = netAt(168 + i);
+    o1 += w * h1[i];
+    o2 += w * h2[i];
+    o3 += w * h3[i];
+  }
+
+  // With no hidden layer the output reads the inputs directly — a linear model,
+  // which provably cannot separate XOR. That failure is the point.
+  float o0 = bias + netAt(168) * p.x + netAt(169) * p.y;
+
+  // smoothstep rather than step: uNetDepth is eased on the CPU, so this lets one
+  // architecture crossfade into the next instead of switching on a threshold.
+  float z = mix(
+    mix(
+      mix(o0, o1, smoothstep(0.0, 1.0, uNetDepth)),
+      o2,
+      smoothstep(1.0, 2.0, uNetDepth)
+    ),
+    o3,
+    smoothstep(2.0, 3.0, uNetDepth)
+  );
+  return 1.0 / (1.0 + exp(-clamp(z, -12.0, 12.0)));
 }
 
 vec3 blend(float w[6]) {
@@ -80,6 +162,21 @@ void main() {
   mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
   pos.xz = rot * pos.xz;
 
+  // ── The field becomes the network's decision surface.
+  //
+  // Evaluated on the SCREEN plane (x, y) rather than as a heightfield in y:
+  // the camera sits on the z axis at y = 0, so a heightfield would be viewed
+  // edge-on and read as a line rather than a surface.
+  float pr = 0.5;
+  float ridge = 0.0;
+  if (uNetMix > 0.001) {
+    pr = netEval(pos.xy * uNetScale);
+    // A narrow band around p = 0.5 — the boundary itself.
+    ridge = 1.0 - smoothstep(0.0, 0.035, abs(pr - 0.5));
+    // Gentle relief so the two classes separate in depth as well as colour.
+    pos.z += (pr - 0.5) * 1.3 * uNetMix;
+  }
+
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
 
   // ── Cursor force, applied in view space so it tracks the screen.
@@ -99,7 +196,10 @@ void main() {
 
   // ── Size: perspective attenuation, plus a flare while travelling.
   float travel = length(to - from) * (1.0 - abs(local * 2.0 - 1.0));
-  float sizeBoost = 1.0 + travel * 0.09 + heat * 1.4 + abs(uVelocity) * 0.0012;
+  // Boundary particles grow, but capped — this is the only hard line in an
+  // otherwise soft field, and it crosses the most text-heavy beat on the page.
+  float sizeBoost = 1.0 + travel * 0.09 + heat * 1.4 + abs(uVelocity) * 0.0012
+                  + min(ridge * uNetMix * 1.6, 1.6);
 
   gl_PointSize = uSize * aScale * uPixelRatio * sizeBoost * (1.0 / max(-mv.z, 0.001));
 
@@ -112,6 +212,10 @@ void main() {
   // sheet of identical dots. Kept scarce — 2% of particles, not a glitter wall.
   vSparkle = pow(max(sin(uTime * 1.6 + aSeed * 62.8), 0.0), 18.0)
              * step(0.98, fract(aSeed * 7.77));
+
+  vNet = pr;
+  vNetMix = uNetMix;
+  vRidge = ridge;
 }
 `;
 
@@ -128,6 +232,9 @@ varying float vTravel;
 varying float vDepth;
 varying float vTint;
 varying float vSparkle;
+varying float vNet;
+varying float vNetMix;
+varying float vRidge;
 
 void main() {
   // Soft round sprite: wide falloff plus a tight core. Cheaper and crisper
@@ -144,6 +251,14 @@ void main() {
   // Base colour varies per particle across the violet→cyan ramp, so the field
   // reads as a spectrum instead of one flat blue.
   vec3 col = mix(uColorCool, uColorWarm, pow(vTint, 1.4));
+
+  // Where the network is driving, colour by its prediction instead: the two
+  // classes become two territories, with the boundary blown out toward white.
+  if (vNetMix > 0.001) {
+    vec3 netCol = mix(uColorCool, uColorWarm, smoothstep(0.12, 0.88, vNet));
+    col = mix(col, netCol, vNetMix);
+    col = mix(col, uColorHot, min(vRidge * vNetMix * 0.75, 0.75));
+  }
 
   // Travelling particles heat up; the cursor blows them out toward white.
   col = mix(col, uColorHot, vTravel * 0.5);

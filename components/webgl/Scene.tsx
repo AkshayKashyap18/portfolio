@@ -57,7 +57,7 @@ export default function Scene() {
           canvas.addEventListener("webglcontextlost", onLost);
         }}
       >
-        <ParticleField count={config!.particles} />
+        <ParticleField count={config!.particles} tier={config!.tier} />
         {/* The nebula continuing past the reading column, into the gutters */}
         <GutterStreams count={Math.round(config!.particles / 32)} />
       </Canvas>

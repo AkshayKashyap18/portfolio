@@ -8,10 +8,12 @@ import {
   accuracy,
   makeDataset,
   MLP,
+  NET_PARAM_SLOTS,
   PRESETS,
   type Point,
   type PresetKey,
 } from "@/lib/mlp";
+import { publishNet, setNetLive } from "@/lib/netBridge";
 
 /** Boundary is evaluated on a GRID×GRID lattice — the visual cost driver. */
 const GRID = 34;
@@ -25,7 +27,7 @@ export default function NeuralTrainer() {
 
   const [preset, setPreset] = useState<PresetKey>("xor");
   const [hidden, setHidden] = useState<number>(6);
-  const [depth, setDepth] = useState<2 | 3>(2);
+  const [depth, setDepth] = useState<0 | 1 | 2 | 3>(2);
   const [lr, setLr] = useState(0.35);
   const [brush, setBrush] = useState<0 | 1>(1);
   const [running, setRunning] = useState(!reduce);
@@ -36,6 +38,8 @@ export default function NeuralTrainer() {
   const netRef = useRef<MLP | null>(null);
   const epochRef = useRef(0);
   const seedRef = useRef(1);
+  // Reused every frame — publishing must not allocate.
+  const packed = useRef<Float32Array>(new Float32Array(NET_PARAM_SLOTS));
 
   const sizes = useMemo(
     () => [2, ...Array.from({ length: depth }, () => hidden), 1],
@@ -48,6 +52,10 @@ export default function NeuralTrainer() {
     netRef.current = new MLP(sizes, seedRef.current);
     epochRef.current = 0;
     setStats({ epoch: 0, loss: 0, acc: 0 });
+    // Publish immediately: a rebuilt net changes depth, and the field must not
+    // keep evaluating the previous architecture for a frame.
+    netRef.current.snapshot(packed.current);
+    publishNet(packed.current, netRef.current.hiddenDepth(), true);
   }, [sizes]);
 
   // Rebuild whenever the architecture changes — old weights no longer fit.
@@ -135,6 +143,11 @@ export default function NeuralTrainer() {
           loss = net.trainEpoch(pointsRef.current, lr);
         }
         epochRef.current += EPOCHS_PER_FRAME;
+
+        // Hand the live weights to the particle field, which evaluates this
+        // same network per particle across the whole viewport.
+        net.snapshot(packed.current);
+        publishNet(packed.current, net.hiddenDepth(), true);
         // React state at frame rate would be wasteful — sample periodically.
         if (epochRef.current % 20 < EPOCHS_PER_FRAME) {
           setStats({
@@ -160,7 +173,12 @@ export default function NeuralTrainer() {
     const el = canvasRef.current;
     if (!el || reduce) return;
     const io = new IntersectionObserver(
-      ([entry]) => setRunning(entry.isIntersecting),
+      ([entry]) => {
+        setRunning(entry.isIntersecting);
+        // The rAF keeps drawing after training stops, so liveness has to be
+        // stated explicitly rather than inferred from the loop.
+        setNetLive(entry.isIntersecting);
+      },
       { threshold: 0.05 },
     );
     io.observe(el);
@@ -215,9 +233,10 @@ export default function NeuralTrainer() {
               from scratch in about 150 lines. The background is the network&apos;s decision
               surface, sampled on a {GRID}×{GRID} grid every frame; opacity is its
               confidence. <strong className="font-medium text-text">Click the canvas</strong>{" "}
-              to add points and watch it adapt. Try XOR with{" "}
-              <strong className="font-medium text-text">1 hidden layer</strong> — it can&apos;t
-              solve it, which is exactly why depth matters.
+              to add points and watch it adapt. Set{" "}
+              <strong className="font-medium text-text">layers to 0</strong> and it becomes a
+              linear model that provably cannot separate XOR — one straight boundary, however
+              long you train it.
             </p>
           </motion.div>
         )}
@@ -279,7 +298,7 @@ export default function NeuralTrainer() {
           <label className="flex items-center gap-2">
             <span className="tracking-wider uppercase">Layers</span>
             <span className="flex gap-1">
-              {([2, 3] as const).map((d) => (
+              {([0, 1, 2, 3] as const).map((d) => (
                 <button
                   key={d}
                   type="button"

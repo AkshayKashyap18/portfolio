@@ -554,31 +554,73 @@ body[data-webgl="on"] .field-fallback {
 }
 
 /* ─────────────────────────────────────────────
-   ATS / recruiter mode — flatten the whole site
+   Clean mode — strip the whole site back to plain text
    ───────────────────────────────────────────── */
-body[data-ats="true"] {
+/*
+   Re-point the design tokens rather than overriding hundreds of utilities.
+   Tailwind's colour utilities compile to var(--color-*), so redefining the
+   variables on the body cascades through every `text-muted`, `text-faint` and
+   even `text-muted/50` on the page.
+
+   Without this, the palette tuned for a near-black ground carries straight over
+   onto white: the hero's second line and every mono label render as pale grey on
+   white and effectively disappear — in the one mode whose entire purpose is
+   being readable.
+*/
+body[data-clean="true"] {
   background: #fff;
-  color: #111;
   font-family: var(--font-sans);
+
+  --color-text: #111114;
+  --color-muted: #3f3f46;
+  --color-faint: #52525b;
+  /* Accents darkened to hold contrast on white. */
+  --color-violet: #5b3fd6;
+  --color-cyan: #0e7490;
+  --color-lime: #3f6212;
+
+  color: var(--color-text);
 }
-body[data-ats="true"] .ats-hide {
+body[data-clean="true"] .clean-hide {
   display: none !important;
 }
-body[data-ats="true"] .glass,
-body[data-ats="true"] .gradient-border {
+
+/* The hero eyebrow carries a dark-ground text shadow that muddies white. */
+body[data-clean="true"] * {
+  text-shadow: none !important;
+}
+
+/* Hairline borders were tuned as white-on-black; invert them. */
+body[data-clean="true"] * {
+  border-color: rgb(0 0 0 / 0.14);
+}
+
+/*
+   Half-opacity de-emphasis reads fine on near-black but composites to ~2.6:1 on
+   white, which fails AA even at the relaxed large-text threshold. Give the
+   faded utilities an explicit solid tone instead of relying on alpha.
+*/
+body[data-clean="true"] .text-muted\/50,
+body[data-clean="true"] .text-muted\/45,
+body[data-clean="true"] .text-muted\/40,
+body[data-clean="true"] .text-muted\/35 {
+  color: #71717a !important;
+}
+body[data-clean="true"] .glass,
+body[data-clean="true"] .gradient-border {
   background: none !important;
   border: none !important;
   backdrop-filter: none !important;
   box-shadow: none !important;
 }
-body[data-ats="true"] .text-gradient {
+body[data-clean="true"] .text-gradient {
   background: none !important;
   color: #111 !important;
   -webkit-text-fill-color: #111 !important;
 }
 
 @media print {
-  .ats-hide {
+  .clean-hide {
     display: none !important;
   }
   body {

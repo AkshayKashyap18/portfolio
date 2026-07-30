@@ -23,7 +23,7 @@ const NOTES = [
     body:
       "A real multi-layer perceptron training as you watch: forward pass, binary cross-entropy, analytic gradients, gradient descent. The background is its decision surface and opacity is its confidence. Click to add points and it adapts.",
     honest:
-      "Written from scratch — no library, no API, no pre-trained weights. Try XOR with a single hidden layer and watch it fail; that's exactly why depth matters.",
+      "Written from scratch — no library, no API, no pre-trained weights. Set layers to 0 on XOR and watch a linear model fail at it forever — the whole page becomes that failure, because the background is the same network.",
   },
 ];
 
@@ -65,7 +65,7 @@ export default function Playground() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.45, ease: easeExpo }}
-            className="ats-hide overflow-hidden"
+            className="clean-hide overflow-hidden"
           >
             <div className="glass mt-6 rounded-2xl p-5 sm:p-6">
               <div className="grid gap-6 sm:grid-cols-2">
@@ -94,7 +94,7 @@ export default function Playground() {
         )}
       </AnimatePresence>
 
-      <div className="ats-hide mt-10 grid gap-6 lg:grid-cols-2">
+      <div className="clean-hide mt-10 grid gap-6 lg:grid-cols-2">
         <Reveal>
           <Tokenizer />
         </Reveal>

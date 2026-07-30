@@ -56,7 +56,7 @@ export default function Contact() {
             type="button"
             onClick={copyEmail}
             aria-label="Copy email address"
-            className="ats-hide relative ml-3 inline-grid size-9 translate-y-1 place-items-center rounded-full border border-white/10 text-muted transition-colors hover:text-text"
+            className="clean-hide relative ml-3 inline-grid size-9 translate-y-1 place-items-center rounded-full border border-white/10 text-muted transition-colors hover:text-text"
           >
             <AnimatePresence mode="wait" initial={false}>
               {copied ? (

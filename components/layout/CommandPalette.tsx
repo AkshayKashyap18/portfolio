@@ -28,10 +28,10 @@ type Item = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onToggleAts: () => void;
+  onToggleClean: () => void;
 };
 
-export default function CommandPalette({ open, onClose, onToggleAts }: Props) {
+export default function CommandPalette({ open, onClose, onToggleClean }: Props) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -130,19 +130,19 @@ export default function CommandPalette({ open, onClose, onToggleAts }: Props) {
       },
       {
         id: "ats",
-        label: "Toggle recruiter / ATS mode",
-        hint: "Plain-text, printable view",
+        label: "Toggle clean mode",
+        hint: "Strip everything back to plain text",
         group: "Actions",
         icon: <FileSpreadsheet className="size-3.5" />,
         run: () => {
-          onToggleAts();
+          onToggleClean();
           onClose();
         },
       },
     ];
 
     return [...nav, ...proj, ...actions];
-  }, [go, onClose, onToggleAts, copied]);
+  }, [go, onClose, onToggleClean, copied]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

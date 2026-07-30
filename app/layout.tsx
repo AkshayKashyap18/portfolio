@@ -72,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body>
         {children}
-        <div className="grain-overlay ats-hide" aria-hidden />
+        <div className="grain-overlay clean-hide" aria-hidden />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

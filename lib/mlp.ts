@@ -10,6 +10,28 @@
 
 export type Point = { x: number; y: number; label: 0 | 1 };
 
+/* ── GPU-shared parameter layout ───────────────────────────
+   The vertex shader evaluates this same network per particle, so both sides
+   must agree byte for byte. Maximum shape is 2 → 8 → 8 → 8 → 1.
+   ───────────────────────────────────────────────────────── */
+
+export const NET_MAX_UNITS = 8;
+
+export const NET_LAYOUT = {
+  /** Weight block offsets for the three possible hidden layers. */
+  hiddenW: [0, 24, 96] as const,
+  /** Bias block offsets for those layers. */
+  hiddenB: [16, 88, 160] as const,
+  /** Output layer weights (8) and bias (1). */
+  outW: 168,
+  outB: 176,
+} as const;
+
+/** 16+8 + 64+8 + 64+8 + 8+1 = 177 floats. */
+export const NET_PARAM_SLOTS = 177;
+/** Uploaded as vec4s to stay clear of per-element uniform slot limits. */
+export const NET_VEC4_COUNT = Math.ceil(NET_PARAM_SLOTS / 4); // 45
+
 /** Deterministic PRNG so a given seed always initialises the same network. */
 function makeRng(seed: number) {
   let s = seed >>> 0 || 1;
@@ -153,6 +175,50 @@ export class MLP {
     }
 
     return loss / n;
+  }
+
+  /**
+   * Pack the weights into a fixed-shape buffer the vertex shader can read.
+   *
+   * The shader must have ONE uniform layout regardless of the architecture the
+   * visitor picks, so everything is normalised to the maximum shape
+   * 2 → 8 → 8 → 8 → 1 and zero-padded. Zero padding is an exact no-op:
+   * tanh(0) = 0 feeding a zero weight contributes nothing.
+   *
+   * The output layer always lands in the last slot, whether the net is 2 or 3
+   * hidden layers deep, so the shader can evaluate both and pick with a mix()
+   * rather than a branch.
+   */
+  snapshot(out: Float32Array): void {
+    out.fill(0);
+
+    const layers = this.weights.length; // 3 when depth 2, 4 when depth 3
+    const hiddenLayers = layers - 1;
+
+    // Hidden layers, in order.
+    for (let l = 0; l < hiddenLayers; l++) {
+      const wBase = NET_LAYOUT.hiddenW[l];
+      const bBase = NET_LAYOUT.hiddenB[l];
+      const fanIn = l === 0 ? 2 : NET_MAX_UNITS;
+
+      for (let j = 0; j < this.weights[l].length; j++) {
+        const row = this.weights[l][j];
+        for (let i = 0; i < row.length; i++) out[wBase + j * fanIn + i] = row[i];
+        out[bBase + j] = this.biases[l][j];
+      }
+    }
+
+    // Output layer — always the final slot.
+    const ol = layers - 1;
+    for (let i = 0; i < this.weights[ol][0].length; i++) {
+      out[NET_LAYOUT.outW + i] = this.weights[ol][0][i];
+    }
+    out[NET_LAYOUT.outB] = this.biases[ol][0];
+  }
+
+  /** 2 or 3 — how many hidden layers this net actually has. */
+  hiddenDepth(): number {
+    return this.weights.length - 1;
   }
 
   /** Total trainable parameters — shown in the UI. */

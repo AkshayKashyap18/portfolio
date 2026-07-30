@@ -40,7 +40,7 @@ export default function CursorGlow() {
     <>
       {/* Spotlight */}
       <motion.div
-        className="ats-hide pointer-events-none fixed z-0 hidden md:block"
+        className="clean-hide pointer-events-none fixed z-0 hidden md:block"
         style={{
           left: gx,
           top: gy,
@@ -56,7 +56,7 @@ export default function CursorGlow() {
 
       {/* Morphing ring / label */}
       <motion.div
-        className="ats-hide pointer-events-none fixed z-[80] hidden items-center justify-center md:flex"
+        className="clean-hide pointer-events-none fixed z-[80] hidden items-center justify-center md:flex"
         style={{ left: rx, top: ry, x: "-50%", y: "-50%" }}
         animate={{
           width: label ? "auto" : 26,
