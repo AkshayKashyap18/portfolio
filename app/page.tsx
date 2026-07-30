@@ -7,6 +7,8 @@ import BeatTracker from "@/components/webgl/BeatTracker";
 import Nav from "@/components/layout/Nav";
 import Preloader from "@/components/layout/Preloader";
 import BeatRail from "@/components/layout/BeatRail";
+import SecretKeys from "@/components/layout/SecretKeys";
+import ConsoleGreeting from "@/components/layout/ConsoleGreeting";
 import ScrollProgress from "@/components/layout/ScrollProgress";
 import CursorGlow from "@/components/layout/CursorGlow";
 import CommandPalette from "@/components/layout/CommandPalette";
@@ -56,6 +58,8 @@ export default function Home() {
         <>
           <BeatTracker />
           <Scene />
+          <SecretKeys />
+          <ConsoleGreeting />
           {/* Keeps copy legible over whatever the field is doing. */}
           <div className="content-scrim ats-hide" aria-hidden />
         </>

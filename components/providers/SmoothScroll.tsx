@@ -2,7 +2,7 @@
 
 import Lenis from "lenis";
 import { useEffect, useRef } from "react";
-import { setPointer, setScroll } from "@/lib/scrollStore";
+import { setPointer, setPointerDown, setScroll } from "@/lib/scrollStore";
 
 /**
  * Lenis smooth scroll, driving the module-level scroll store.
@@ -78,13 +78,35 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
         true,
       );
     };
-    const onLeave = () => setPointer(0, 0, false);
+    const onLeave = () => {
+      setPointer(0, 0, false);
+      setPointerDown(false);
+    };
+
+    // Press-and-hold collapses the particle field toward the cursor; release
+    // fires a shockwave. Skipped on interactive elements so it never competes
+    // with a click on a button or link.
+    const onDown = (e: PointerEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el?.closest("a, button, input, textarea, select, [role='tab']")) return;
+      setPointerDown(true);
+    };
+    const onUp = () => setPointerDown(false);
 
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerleave", onLeave);
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("pointerup", onUp, { passive: true });
+    window.addEventListener("pointercancel", onUp, { passive: true });
+    window.addEventListener("blur", onUp);
+
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("blur", onUp);
     };
   }, []);
 

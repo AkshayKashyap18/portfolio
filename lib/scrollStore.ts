@@ -18,6 +18,10 @@ type ScrollState = {
   pointerY: number;
   /** Whether the pointer is currently over the document. */
   pointerActive: boolean;
+  /** Held down — the particle field collapses toward the cursor while true. */
+  pointerDown: boolean;
+  /** Timestamp of the last release, so the field can fire a shockwave. */
+  pointerReleasedAt: number;
 };
 
 export const scrollState: ScrollState = {
@@ -27,6 +31,8 @@ export const scrollState: ScrollState = {
   pointerX: 0,
   pointerY: 0,
   pointerActive: false,
+  pointerDown: false,
+  pointerReleasedAt: -Infinity,
 };
 
 /** Subscribers that DO need React updates (nav, progress bar) — throttled. */
@@ -56,4 +62,11 @@ export function setPointer(x: number, y: number, active = true) {
   scrollState.pointerX = x;
   scrollState.pointerY = y;
   scrollState.pointerActive = active;
+}
+
+export function setPointerDown(down: boolean) {
+  if (scrollState.pointerDown && !down) {
+    scrollState.pointerReleasedAt = performance.now();
+  }
+  scrollState.pointerDown = down;
 }

@@ -70,11 +70,23 @@ export function nebula(count: number, radius = 4.1): Float32Array {
   return out;
 }
 
-/** 1 — Initials: particles sampled from rendered glyphs. */
-export function textFormation(count: number, text: string): Float32Array {
+/**
+ * 1 — Text: particles sampled from rendered glyphs.
+ *
+ * The font size is fitted to the canvas rather than fixed, so this works for two
+ * initials or a whole word without the letters running off the edge.
+ * `worldWidth` is how wide the result should be in scene units — keep it under
+ * ~13 so it stays inside the visible frustum.
+ */
+export function textFormation(
+  count: number,
+  text: string,
+  worldWidth = 9.7,
+  yOffset = 0,
+): Float32Array {
   const out = new Float32Array(count * 3);
-  const W = 512;
-  const H = 256;
+  const W = 1024;
+  const H = 320;
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -88,8 +100,15 @@ export function textFormation(count: number, text: string): Float32Array {
   ctx.fillStyle = "#fff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = "900 190px Inter, system-ui, sans-serif";
-  ctx.fillText(text, W / 2, H / 2 + 6);
+
+  // Fit the type to the canvas: measure at a reference size, then scale.
+  const REF = 200;
+  ctx.font = `900 ${REF}px Inter, system-ui, sans-serif`;
+  const measured = ctx.measureText(text).width || 1;
+  const fitted = Math.min(REF * ((W * 0.92) / measured), H * 0.86);
+  ctx.font = `900 ${Math.round(fitted)}px Inter, system-ui, sans-serif`;
+
+  ctx.fillText(text, W / 2, H / 2 + fitted * 0.03);
 
   const { data } = ctx.getImageData(0, 0, W, H);
 
@@ -105,7 +124,7 @@ export function textFormation(count: number, text: string): Float32Array {
   const pairs = lit.length / 2;
   if (pairs === 0) return nebula(count);
 
-  const SCALE = 0.019;
+  const scale = worldWidth / W;
 
   for (let i = 0; i < count; i++) {
     const p = Math.floor(rand() * pairs) * 2;
@@ -113,8 +132,8 @@ export function textFormation(count: number, text: string): Float32Array {
     const x = lit[p] + rand() - 0.5;
     const y = lit[p + 1] + rand() - 0.5;
 
-    out[i * 3] = (x - W / 2) * SCALE;
-    out[i * 3 + 1] = -(y - H / 2) * SCALE;
+    out[i * 3] = (x - W / 2) * scale;
+    out[i * 3 + 1] = -(y - H / 2) * scale + yOffset;
     out[i * 3 + 2] = (rand() - 0.5) * 0.55;
   }
   return out;

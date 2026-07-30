@@ -1,15 +1,22 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { buildFormations } from "@/lib/formations";
+import { buildFormations, textFormation } from "@/lib/formations";
+import { onSecret, secretDisplay, secretState } from "@/lib/secret";
 import { hasBeats, opacityFromStage, stageFromScroll } from "@/lib/beats";
 import { introState } from "@/lib/intro";
 import { scrollState } from "@/lib/scrollStore";
 import { PARTICLE_FRAG, PARTICLE_VERT } from "./particles.glsl";
 
 const STAGE_COUNT = 6;
+
+/** Resting cursor behaviour: a gentle push away from the pointer. */
+const REST_FORCE = 0.85;
+const REST_RADIUS = 2.6;
+/** How long the release shockwave lasts. */
+const BURST_MS = 430;
 
 /** Dwell at each formation, then travel quickly between them. */
 function shapeTransition(t: number): number {
@@ -24,6 +31,7 @@ export default function ParticleField({ count }: { count: number }) {
 
   // Smoothed values so nothing snaps when scroll velocity spikes.
   const smooth = useRef({ stageF: 0, pointerX: 0, pointerY: 0, pointerAmt: 0, velocity: 0 });
+  const secretMorph = useRef(0);
 
   const geometry = useMemo(() => {
     const formations = buildFormations(count);
@@ -73,6 +81,8 @@ export default function ParticleField({ count }: { count: number }) {
         uPixelRatio: { value: 1 },
         uPointer: { value: new THREE.Vector2(0, 0) },
         uPointerActive: { value: 0 },
+        uPointerForce: { value: 0.85 },
+        uPointerRadius: { value: 2.6 },
         uVelocity: { value: 0 },
         uDrift: { value: 0.34 },
         uOpacity: { value: 1 },
@@ -82,6 +92,30 @@ export default function ParticleField({ count }: { count: number }) {
       },
     });
   }, []);
+
+  /**
+   * Easter egg buffer swap. The "initials" slot (aP1) is rewritten with the
+   * hidden word while active and restored to the initials afterwards, so the egg
+   * costs nothing at rest — no extra attribute, no extra draw call.
+   */
+  useEffect(() => {
+    const attr = geometry.getAttribute("aP1") as THREE.BufferAttribute | undefined;
+    if (!attr) return;
+
+    const restore = attr.array.slice() as Float32Array;
+
+    const swap = () => {
+      // Narrower than the frustum so it never clips, and lifted above the hero
+      // headline so the two don't sit on top of each other.
+      const src = secretState.active
+        ? textFormation(count, secretDisplay(), 9.4, 1.7)
+        : restore;
+      (attr.array as Float32Array).set(src);
+      attr.needsUpdate = true;
+    };
+
+    return onSecret(swap);
+  }, [geometry, count]);
 
   useFrame((state, delta) => {
     const u = material.uniforms;
@@ -108,6 +142,22 @@ export default function ParticleField({ count }: { count: number }) {
 
     const wa = u.uWA.value as number[];
     const wb = u.uWB.value as number[];
+
+    // ── Easter egg: hold the text formation while it's active, whatever the
+    // scroll position says. The buffer swap happens in the effect below.
+    if (secretState.active && !introState.active) {
+      for (let i = 0; i < STAGE_COUNT; i++) {
+        wa[i] = i === 0 ? 1 : 0;
+        wb[i] = i === 1 ? 1 : 0;
+      }
+      secretMorph.current = THREE.MathUtils.damp(secretMorph.current, 1, 3.2, dt);
+      u.uMorph.value = secretMorph.current;
+      u.uStagger.value = 0.5;
+      u.uOpacity.value = THREE.MathUtils.damp(u.uOpacity.value as number, 1, 4, dt);
+      u.uDrift.value = 0.07;
+      return;
+    }
+    secretMorph.current = 0;
 
     if (introState.active || introState.t < 1) {
       // Intro: bloom out of the singularity into the opening nebula. Wide
@@ -153,6 +203,36 @@ export default function ParticleField({ count }: { count: number }) {
       (s.pointerY * visibleHeight) / 2,
     );
     u.uPointerActive.value = s.pointerAmt;
+
+    // ── Gravity well. Holding the pointer inverts the cursor force so the field
+    // collapses inward; releasing spikes it positive for a moment, throwing a
+    // shockwave out before it settles back to the gentle resting repulsion.
+    const sinceRelease = performance.now() - scrollState.pointerReleasedAt;
+    const bursting = sinceRelease < BURST_MS;
+
+    let targetForce = REST_FORCE;
+    let targetRadius = REST_RADIUS;
+    if (scrollState.pointerDown) {
+      targetForce = -3.1;
+      targetRadius = 8.5;
+    } else if (bursting) {
+      targetForce = 7.5;
+      targetRadius = 9.5;
+    }
+
+    // Collapse eases in; the burst needs to hit fast, so it damps harder.
+    u.uPointerForce.value = THREE.MathUtils.damp(
+      u.uPointerForce.value as number,
+      targetForce,
+      scrollState.pointerDown ? 4.5 : 11,
+      dt,
+    );
+    u.uPointerRadius.value = THREE.MathUtils.damp(
+      u.uPointerRadius.value as number,
+      targetRadius,
+      6,
+      dt,
+    );
 
     // ── Scroll velocity feeds particle size, so the field "breathes" on scroll.
     s.velocity = THREE.MathUtils.damp(s.velocity, scrollState.velocity, 8, dt);

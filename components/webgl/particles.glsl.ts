@@ -29,6 +29,8 @@ uniform float uSize;
 uniform float uPixelRatio;
 uniform vec2  uPointer;
 uniform float uPointerActive;
+uniform float uPointerForce;   // signed: + repels, − attracts
+uniform float uPointerRadius;
 uniform float uVelocity;
 uniform float uDrift;
 
@@ -81,12 +83,17 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
 
   // ── Cursor force, applied in view space so it tracks the screen.
+  //
+  // uPointerForce is signed: positive repels (the resting state), negative pulls
+  // the field into a well while the pointer is held down, and it spikes hard
+  // positive for a moment on release to throw a shockwave outward.
   vec2 toPointer = mv.xy - uPointer;
   float pd = length(toPointer);
-  float influence = uPointerActive * smoothstep(2.6, 0.0, pd);
-  mv.xy += normalize(toPointer + vec2(0.0001)) * influence * 0.85;
+  float influence = uPointerActive * smoothstep(uPointerRadius, 0.0, pd);
+  mv.xy += normalize(toPointer + vec2(0.0001)) * influence * uPointerForce;
 
-  float heat = influence;
+  // Heat tracks force magnitude, so a collapse and a burst both flare white.
+  float heat = influence * clamp(abs(uPointerForce) * 0.5, 0.0, 1.6);
 
   gl_Position = projectionMatrix * mv;
 
