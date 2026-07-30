@@ -1,0 +1,365 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   Design tokens
+   ───────────────────────────────────────────── */
+@theme {
+  --color-bg: #07070b;
+  --color-bg-soft: #0b0b12;
+  --color-text: #ededf2;
+  --color-muted: #9494a3;
+  /* Lifted from #55555f — the original failed contrast on the mono labels. */
+  --color-faint: #6e6e7c;
+  --color-violet: #7c5cff;
+  --color-cyan: #22d3ee;
+  --color-lime: #a3e635;
+
+  --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, monospace;
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────── */
+* {
+  border-color: rgb(255 255 255 / 0.08);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgb(124 92 255 / 0.35);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-violet);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.1);
+  border-radius: 99px;
+  border: 3px solid var(--color-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+
+/* ─────────────────────────────────────────────
+   Utilities
+   ───────────────────────────────────────────── */
+@utility glass {
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  backdrop-filter: blur(20px);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+    0 20px 60px -20px rgb(0 0 0 / 0.6);
+}
+
+@utility text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-text) 10%,
+    var(--color-violet) 50%,
+    var(--color-cyan) 90%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility grain {
+  position: relative;
+}
+
+/* Film grain overlay so gradients read as texture, not banding */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Gradient hairline border on hover, via masked pseudo-element */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--color-violet),
+    var(--color-cyan) 60%,
+    transparent
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-expo);
+  pointer-events: none;
+}
+.gradient-border:hover::after {
+  opacity: 1;
+}
+
+/* ─────────────────────────────────────────────
+   Aurora
+   ───────────────────────────────────────────── */
+@keyframes drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(6vw, -4vh, 0) scale(1.12);
+  }
+  66% {
+    transform: translate3d(-4vw, 5vh, 0) scale(0.94);
+  }
+}
+@keyframes drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-7vw, 6vh, 0) scale(0.9);
+  }
+}
+@keyframes drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  40% {
+    transform: translate3d(5vw, 7vh, 0) scale(1.15);
+  }
+  75% {
+    transform: translate3d(8vw, -3vh, 0) scale(1);
+  }
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  will-change: transform;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(163 230 53 / 0.5);
+  }
+  50% {
+    opacity: 0.75;
+    box-shadow: 0 0 0 6px rgb(163 230 53 / 0);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes marquee-reverse {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+.marquee-track-reverse {
+  animation: marquee-reverse 40s linear infinite;
+  will-change: transform;
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(300%);
+    opacity: 0;
+  }
+}
+.scroll-cue {
+  animation: scroll-cue 2.2s var(--ease-expo) infinite;
+}
+
+@keyframes caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.caret {
+  animation: caret 1.1s steps(1) infinite;
+}
+
+/* Mask edges of horizontal scrollers / marquees */
+.mask-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Reduced motion — collapse everything to a fade
+   ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+  }
+  .aurora-blob,
+  .marquee-track,
+  .marquee-track-reverse,
+  .scroll-cue,
+  .pulse-dot {
+    animation: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Static fallback for when WebGL is unavailable
+   or the visitor prefers reduced motion.
+   ───────────────────────────────────────────── */
+.field-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: -11;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 900ms ease;
+  background:
+    radial-gradient(50% 40% at 22% 18%, rgba(124, 92, 255, 0.3), transparent 70%),
+    radial-gradient(45% 38% at 82% 30%, rgba(34, 211, 238, 0.18), transparent 70%),
+    radial-gradient(60% 50% at 50% 92%, rgba(124, 92, 255, 0.16), transparent 72%);
+}
+
+/* Once real particles are rendering, the gradient only needs to seat them. */
+body[data-webgl="on"] .field-fallback {
+  opacity: 0.28;
+}
+
+/*
+   Sits between the canvas and the content. Guarantees text contrast no matter
+   what the field is doing behind it — the field can never win against copy.
+*/
+.content-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 80% at 18% 72%,
+      rgba(7, 7, 11, 0.9) 0%,
+      rgba(7, 7, 11, 0.55) 38%,
+      transparent 68%
+    ),
+    linear-gradient(to bottom, rgba(7, 7, 11, 0.55) 0%, transparent 22%),
+    linear-gradient(to top, rgba(7, 7, 11, 0.7) 0%, transparent 30%);
+}
+
+/* ─────────────────────────────────────────────
+   ATS / recruiter mode — flatten the whole site
+   ───────────────────────────────────────────── */
+body[data-ats="true"] {
+  background: #fff;
+  color: #111;
+  font-family: var(--font-sans);
+}
+body[data-ats="true"] .ats-hide {
+  display: none !important;
+}
+body[data-ats="true"] .glass,
+body[data-ats="true"] .gradient-border {
+  background: none !important;
+  border: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+body[data-ats="true"] .text-gradient {
+  background: none !important;
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
+}
+
+@media print {
+  .ats-hide {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
