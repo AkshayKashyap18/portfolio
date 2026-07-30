@@ -17,9 +17,9 @@ import { useReducedMotion } from "framer-motion";
 const GLYPHS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
 
 /** How long before each successive character locks in. */
-const LOCK_STEP_MS = 46;
+const LOCK_STEP_MS = 88;
 /** How often unresolved characters pick a new glyph. */
-const CHURN_MS = 38;
+const CHURN_MS = 46;
 
 type Props = {
   text: string;

@@ -2,10 +2,11 @@
 
 import { AnimatePresence, motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { Command, FileText, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { navSections, profile } from "@/lib/data";
 import { easeExpo, springSnappy } from "@/lib/motion";
 import { useActiveSection } from "@/lib/useActiveSection";
+import { useIntroDone } from "@/lib/useIntroDone";
 import ScrambleText from "@/components/ui/ScrambleText";
 
 const ids = navSections.map((s) => s.id);
@@ -17,8 +18,29 @@ export default function Nav({ onOpenPalette }: { onOpenPalette: () => void }) {
   // Bumped on hover to replay the wordmark decode.
   const [scrambleKey, setScrambleKey] = useState(0);
   const { scrollY } = useScroll();
+  const introDone = useIntroDone();
+  const wasScrolled = useRef(false);
 
-  useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 40));
+  useMotionValueEvent(scrollY, "change", (v) => {
+    const next = v > 40;
+    // Replay the decode each time you come back to the top, so it isn't a
+    // one-time blink that's easy to miss.
+    if (wasScrolled.current && !next) setScrambleKey((k) => k + 1);
+    wasScrolled.current = next;
+    setScrolled(next);
+  });
+
+  /**
+   * Play it once the curtain is fully clear — not merely once it has *started*
+   * lifting. The curtain exits upward over 1s, so the nav sits at the very last
+   * strip of screen to be uncovered; firing on the lift itself still plays the
+   * decode behind it.
+   */
+  useEffect(() => {
+    if (!introDone) return;
+    const t = window.setTimeout(() => setScrambleKey((k) => k + 1), 1050);
+    return () => window.clearTimeout(t);
+  }, [introDone]);
 
   return (
     <>
@@ -47,7 +69,10 @@ export default function Nav({ onOpenPalette }: { onOpenPalette: () => void }) {
               text={`${profile.firstName.toLowerCase()}.dev`}
               accent="."
               trigger={scrambleKey}
-              className="hidden font-mono text-xs tracking-tight text-muted transition-colors group-hover:text-text sm:block"
+              // Never on mount: the intro curtain covers the screen for the first
+              // ~1.7s, so a mount-time decode would play entirely behind it.
+              playOnMount={false}
+              className="block font-mono text-xs tracking-tight text-muted transition-colors group-hover:text-text"
             />
           </a>
 
