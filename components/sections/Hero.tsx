@@ -30,14 +30,11 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.85 }}
           className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.28em] text-muted uppercase [text-shadow:0_1px_12px_rgba(7,7,11,0.9)]"
         >
-          {profile.available && (
-            <span className="inline-flex items-center gap-2 text-muted">
-              <span className="pulse-dot size-1 rounded-full bg-lime" />
-              Open to work
-            </span>
-          )}
+          <span className="text-text">{profile.focus}</span>
+          <span className="hidden text-white/20 sm:inline">/</span>
           <span>{profile.location}</span>
-          <span className="hidden sm:inline">AI · Backend · LLM Systems</span>
+          <span className="hidden text-white/20 sm:inline">/</span>
+          <span className="hidden sm:inline">Selected work 2025—2026</span>
         </motion.div>
 
         {/* Name — the only large type on the screen */}

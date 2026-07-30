@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Download, Github, Mail, Phone } from "lucide-react";
 import { useState } from "react";
 import { profile } from "@/lib/data";
-import { easeExpo, inView, reveal, stagger } from "@/lib/motion";
 import Section from "@/components/ui/Section";
 import MagneticButton from "@/components/ui/MagneticButton";
 
@@ -19,40 +18,31 @@ export default function Contact() {
 
   return (
     <Section id="contact" className="pb-20">
-      <motion.div
-        variants={stagger(0, 0.09)}
-        initial="hidden"
-        whileInView="show"
-        viewport={inView}
-        className="relative"
-      >
-        <motion.div
-          variants={reveal}
+      <div className="sda-stagger relative">
+        <div
           className="flex items-center gap-3 font-mono text-xs tracking-[0.2em] text-faint uppercase"
         >
           <span className="text-violet">05</span>
           <span className="h-px w-10 bg-gradient-to-r from-violet/60 to-transparent" />
           <span>Contact</span>
-        </motion.div>
+        </div>
 
-        <motion.h2
-          variants={reveal}
+        <h2
           className="mt-6 max-w-3xl text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] font-semibold tracking-[-0.04em] text-balance"
         >
           Let&apos;s build something{" "}
           <span className="text-gradient">intelligent</span>.
-        </motion.h2>
+        </h2>
 
-        <motion.p
-          variants={reveal}
+        <p
           className="mt-6 max-w-md text-[17px] leading-relaxed text-muted text-pretty"
         >
-          I&apos;m open to roles and collaborations in AI and backend engineering. The fastest
-          way to reach me is email — I reply to everything.
-        </motion.p>
+          If you&apos;re building something in AI or backend engineering and want to talk
+          shop, the fastest way to reach me is email — I reply to everything.
+        </p>
 
         {/* Email */}
-        <motion.div variants={reveal} className="mt-10">
+        <div className="mt-10">
           <a
             href={`mailto:${profile.email}`}
             data-cursor="email"
@@ -92,10 +82,10 @@ export default function Contact() {
               )}
             </AnimatePresence>
           </button>
-        </motion.div>
+        </div>
 
         {/* Buttons */}
-        <motion.div variants={reveal} className="mt-10 flex flex-wrap gap-3">
+        <div className="mt-10 flex flex-wrap gap-3">
           <MagneticButton href={`mailto:${profile.email}`} cursorLabel="write">
             <Mail className="size-4" />
             Email me
@@ -108,11 +98,10 @@ export default function Contact() {
             <Download className="size-4" />
             Résumé
           </MagneticButton>
-        </motion.div>
+        </div>
 
         {/* Direct details */}
-        <motion.dl
-          variants={reveal}
+        <dl
           className="mt-14 grid gap-6 border-t border-white/8 pt-8 sm:grid-cols-3"
         >
           {[
@@ -145,8 +134,8 @@ export default function Contact() {
               </dd>
             </div>
           ))}
-        </motion.dl>
-      </motion.div>
+        </dl>
+      </div>
     </Section>
   );
 }

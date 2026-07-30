@@ -15,12 +15,13 @@ export const profile = {
   github: "https://github.com/AkshayKashyap18",
   githubHandle: "AkshayKashyap18",
   resume: "/Akshay-Kashyap-Resume.pdf",
-  available: true,
+  /** Neutral positioning line — this is a portfolio, not a job application. */
+  focus: "AI · Backend · LLM Systems",
   pitch:
     "I build the backend and the intelligence behind it — production FastAPI services, and the LLM systems that make them think.",
   bio: [
     "I'm an AI-focused CS undergraduate who ended up spending most of my time where the model meets the machine: designing backend services that are fast and secure, then wiring real language-model intelligence into them.",
-    "At Alrium I ship production Python and FastAPI against Supabase and PostgreSQL — auth, role-based access, query paths that hold up under load — and build the AI layer on top: embeddings, semantic search, and generative workflows using OpenAI and Google models. Outside work I've shipped three of my own AI products, from a mental-health assessment platform to an MCP-based task orchestrator.",
+    "Day to day I ship production Python and FastAPI against Supabase and PostgreSQL — auth, role-based access, query paths that hold up under load — and build the AI layer on top: agentic workflows, LLM document extraction, embeddings and semantic search across OpenAI, Anthropic and Google models. Alongside that I've shipped three AI products of my own, end to end.",
   ],
 } as const;
 
@@ -63,6 +64,8 @@ export const experience: Job[] = [
 
 /* ── Projects ─────────────────────────────────────────── */
 
+export type ProjectKind = "production" | "personal";
+
 export type Project = {
   slug: string;
   name: string;
@@ -71,6 +74,20 @@ export type Project = {
   problem: string;
   approach: string;
   outcome: string;
+  /** Which group the card belongs to — drives the Work section tabs. */
+  kind: ProjectKind;
+  period?: string;
+  /**
+   * What Akshay personally owned, stated honestly. On team projects this is the
+   * most important thing on the card: an interviewer's first question is always
+   * "which part did you build?"
+   */
+  role?: string;
+  /**
+   * Outcomes delivered by the whole team. Rendered under an explicit "Team
+   * outcome" label so these are never mistaken for personal claims.
+   */
+  teamMetrics?: { label: string; value: string }[];
   bullets: string[];
   stack: string[];
   /** Set these once the repo exists — the card renders real buttons automatically. */
@@ -81,9 +98,175 @@ export type Project = {
   accent: "violet" | "cyan" | "lime";
 };
 
+export const KIND_LABEL: Record<ProjectKind, string> = {
+  production: "Production",
+  personal: "Personal",
+};
+
 export const projects: Project[] = [
+  /* ── Production work ────────────────────────────────────
+     Deliberately de-identified: no client, employer, colleague or internal
+     system names. Every metric below traces to a real artifact; team outcomes
+     are labelled as such and never presented as personal achievements.
+     ─────────────────────────────────────────────────────── */
+  {
+    slug: "llm-extraction-pipeline",
+    kind: "production",
+    period: "2026",
+    name: "LLM Extraction Pipeline",
+    tagline: "Document extraction with measured guardrails",
+    hook:
+      "The model was right and the pipeline still corrupted the database: the term “9-18” went unquoted into a numeric SQL column, where it evaluated to −9.",
+    problem:
+      "Read hundreds of financial rate pages per run and emit structured offer records. The four-model LSTM/NER stack it replaced scored F1 0.25 — almost everything it produced was wrong. The hard part isn't parsing; it's judging whether a row is a real promotional offer or just a high rung on an ordinary rate ladder.",
+    approach:
+      "Claude via Bedrock at temperature 0, reproducing the retired model's exact output shape so nothing downstream changed. An HTML cleaner falls back to density-based extraction on huge pages, treating tables as atomic — the old rule was collapsing a 116k-character page to 124. Each prompt is bound to its paired hallucination filter, so rollback is config.",
+    outcome:
+      "F1 0.846 on a 118-page human gold set — against 0.25 for the system replaced, and 0.668 for the same model on raw HTML, which is what makes the cleaner defensible rather than assumed. 600 pages ran with zero errors at $0.0117 each.",
+    role:
+      "Sole author of the extraction module — prompts, guards, fallback, SQL-safety layer, service and alerting. Two boundaries: the definition of a valid offer came from the rule owner, and the cleaner concept from a reference script; the table-atomicity fix and guards were mine.",
+    teamMetrics: [
+      { label: "F1, shipped version", value: "0.846" },
+      { label: "F1, system replaced", value: "0.25" },
+    ],
+    bullets: [
+      "Prompts and their hallucination filters versioned as immutable pairs — rollback is one env variable.",
+      "Traced a term-corruption bug across four systems to unquoted SQL formatting downstream.",
+      "Downgraded my own 98% headline to 88–92% after finding the audit methodology inconsistent.",
+    ],
+    stack: [
+      "Python",
+      "AWS Bedrock",
+      "Anthropic Claude",
+      "BeautifulSoup",
+      "FastAPI",
+      "Docker",
+      "Selenium",
+      "CloudWatch",
+    ],
+    architecture: {
+      nodes: [
+        { id: "fetch", label: "Fetch Pages", x: 7, y: 50 },
+        { id: "clean", label: "HTML Cleaner", x: 29, y: 50 },
+        { id: "llm", label: "LLM Extract", x: 51, y: 50 },
+        { id: "guards", label: "Guards", x: 73, y: 50 },
+        { id: "store", label: "Store+Review", x: 93, y: 50 },
+        { id: "bench", label: "Gold Bench", x: 51, y: 12 },
+      ],
+      edges: [
+        ["fetch", "clean"],
+        ["clean", "llm"],
+        ["llm", "guards"],
+        ["guards", "store"],
+        ["guards", "clean"],
+        ["bench", "llm"],
+      ],
+    },
+    accent: "cyan",
+  },
+  {
+    slug: "lakehouse-migration",
+    kind: "production",
+    period: "2026",
+    name: "Lakehouse Migration Platform",
+    tagline: "Client-governed ERP migration",
+    hook:
+      "The source ERP had no usable change-data-capture, so every insert, update and delete had to be derived from scratch.",
+    problem:
+      "A large ERP estate had to move onto a lakehouse table by table, with the business signing off exactly which columns survived and in what order. Tables ran to hundreds of columns and millions of rows, many mostly empty.",
+    approach:
+      "A rules engine where a returned sign-off sheet drives keep, drop, rename, cast and column order — onboarding becomes data entry, not code. Around it, an orchestrator where one control-table row adds, pauses or reschedules a table. Where no change feed existed, a row-hash three-way merge derives inserts, updates and deletes — including deletes the source cannot report.",
+    outcome:
+      "The first table went live end to end — 3.9M rows cut from 180 columns to the 22 signed off — and became the template for every table after. A key-uniqueness gate I made mandatory caught four tables silently corrupted by duplicate keys.",
+    role:
+      "I own the rules engine and column ordering, the type dictionary and cast reconciliation, the sign-off generator, the production worker notebook and the orchestrator. The audit notebook and warehouse bridge were another engineer's build — I ran, debugged, extended and directed those.",
+    teamMetrics: [
+      { label: "Rows, first table live", value: "3.9M" },
+      { label: "Columns after sign-off", value: "180→22" },
+    ],
+    bullets: [
+      "A returned tick-sheet drives keep/drop/rename/cast/order for 13 tables — onboarding is data entry, not code.",
+      "Made key-uniqueness the mandatory first gate after finding append-mode duplicates corrupting four tables.",
+      "Specced a hash/timestamp diff engine because the source exposed no trustworthy change feed.",
+    ],
+    stack: [
+      "Microsoft Fabric",
+      "Delta Lake",
+      "PySpark",
+      "Spark SQL",
+      "T-SQL",
+      "Python",
+      "Medallion Architecture",
+    ],
+    architecture: {
+      nodes: [
+        { id: "src", label: "ERP Source", x: 6, y: 50 },
+        { id: "raw", label: "Raw + CDF", x: 28, y: 50 },
+        { id: "bronze", label: "Bronze", x: 50, y: 50 },
+        { id: "silver", label: "Silver", x: 71, y: 50 },
+        { id: "wh", label: "Serving WH", x: 92, y: 50 },
+        { id: "rules", label: "Rules Table", x: 60, y: 12 },
+      ],
+      edges: [
+        ["src", "raw"],
+        ["raw", "bronze"],
+        ["bronze", "silver"],
+        ["silver", "wh"],
+        ["rules", "bronze"],
+        ["rules", "silver"],
+      ],
+    },
+    accent: "violet",
+  },
+  {
+    slug: "agentic-quote-engine",
+    kind: "production",
+    period: "2026",
+    name: "Agentic Quote Engine",
+    tagline: "Conversation in, priced quote out",
+    hook:
+      "A salesperson describes a process in plain English; an agent reasons about it, validates the physics, prices it and returns a branded quote.",
+    problem:
+      "Quoting industrial instrumentation meant driving a manual configurator through hundreds of interdependent options, applying engineering rules by hand. Turnaround ran to a full day, and the expertise lived in people's heads rather than the system.",
+    approach:
+      "A LangGraph agent replaces the configurator: it extracts parameters from a plain-English brief, infers what it can and asks only what it cannot deduce, validates feasibility against operating conditions, then applies engineering rules before writing a fully specified PDF quote.",
+    outcome:
+      "The agent is in daily production use, handling multiple configurations in a single quote and explaining every flagged issue in plain language rather than failing silently.",
+    teamMetrics: [
+      { label: "Time to quote", value: "24h → 4min" },
+      { label: "First-pass accuracy", value: "95%" },
+    ],
+    bullets: [
+      "Agentic graph reasons over a plain-English brief, asking only what it cannot infer.",
+      "Real-time feasibility validation against operating conditions, with plain-language explanations.",
+      "Rule-driven pricing and configuration, output as a fully specified branded PDF.",
+    ],
+    stack: ["LangGraph", "Google Gemini", "FastAPI", "React", "Supabase", "AWS", "Python"],
+    architecture: {
+      nodes: [
+        { id: "brief", label: "Plain English", x: 7, y: 50 },
+        { id: "agent", label: "Agent Graph", x: 30, y: 50 },
+        { id: "physics", label: "Feasibility", x: 53, y: 20 },
+        { id: "rules", label: "Rules Engine", x: 53, y: 80 },
+        { id: "price", label: "Pricing", x: 75, y: 50 },
+        { id: "pdf", label: "PDF Quote", x: 94, y: 50 },
+      ],
+      edges: [
+        ["brief", "agent"],
+        ["agent", "physics"],
+        ["agent", "rules"],
+        ["physics", "price"],
+        ["rules", "price"],
+        ["price", "pdf"],
+      ],
+    },
+    accent: "lime",
+  },
   {
     slug: "mindmate",
+    kind: "personal",
+    period: "2025",
+    repo: "https://github.com/AkshayKashyap18/Mindmate",
     name: "MindMate",
     tagline: "AI Mental Health Companion",
     hook: "Clinical-grade self-assessment, made approachable by voice and avatar.",
@@ -121,6 +304,9 @@ export const projects: Project[] = [
   },
   {
     slug: "edumorph",
+    kind: "personal",
+    period: "2025",
+    repo: "https://github.com/AkshayKashyap18/edumorph",
     name: "EduMorph",
     tagline: "Personalized AI Learning System",
     hook: "Drop in a PDF, get back the study material you'd have made yourself — if you had the time.",
@@ -158,6 +344,9 @@ export const projects: Project[] = [
   },
   {
     slug: "mcp-todo",
+    kind: "personal",
+    period: "2025",
+    repo: "https://github.com/AkshayKashyap18/Mcp-todo",
     name: "MCP Todo",
     tagline: "AI Task Management System",
     hook: "A task manager an agent can actually operate — built on Model Context Protocol.",
@@ -199,12 +388,71 @@ export const projects: Project[] = [
 
 export type SkillCategory = { key: string; label: string; items: string[] };
 
+/**
+ * Every entry here is something used in real shipped work — the professional
+ * projects, the personal ones, or both. Nothing aspirational.
+ */
 export const skills: SkillCategory[] = [
-  { key: "languages", label: "Languages", items: ["Python", "Java", "C", "JavaScript"] },
-  { key: "web", label: "Web & Cloud", items: ["React", "FastAPI", "AWS", "Docker"] },
-  { key: "aiml", label: "AI / ML", items: ["Hugging Face", "OpenAI API", "Transformers", "PyTorch"] },
-  { key: "tools", label: "Tools", items: ["Firebase", "Git", "Jupyter", "Google Colab", "Botpress"] },
-  { key: "data", label: "Data", items: ["SQL", "NumPy", "Power BI", "Excel"] },
+  {
+    key: "languages",
+    label: "Languages",
+    items: ["Python", "TypeScript", "JavaScript", "SQL", "Java", "C"],
+  },
+  {
+    key: "llm",
+    label: "AI & LLM Systems",
+    items: [
+      "LangGraph",
+      "AWS Bedrock",
+      "Anthropic Claude",
+      "OpenAI API",
+      "Google Gemini",
+      "Prompt Engineering",
+      "LLM Evaluation",
+      "Embeddings & Semantic Search",
+      "MCP",
+      "PyTorch",
+      "Transformers",
+      "Hugging Face",
+    ],
+  },
+  {
+    key: "backend",
+    label: "Backend",
+    items: [
+      "FastAPI",
+      "Django",
+      "REST APIs",
+      "Supabase",
+      "PostgreSQL",
+      "Auth & RBAC",
+      "Firebase",
+    ],
+  },
+  {
+    key: "data",
+    label: "Data Engineering",
+    items: [
+      "Microsoft Fabric",
+      "Delta Lake",
+      "PySpark",
+      "Medallion Architecture",
+      "Change Data Capture",
+      "Data Quality Profiling",
+      "NumPy",
+      "Power BI",
+    ],
+  },
+  {
+    key: "cloud",
+    label: "Cloud & DevOps",
+    items: ["AWS Lambda", "AWS S3", "AWS EC2", "Docker", "Terraform", "Git"],
+  },
+  {
+    key: "frontend",
+    label: "Frontend",
+    items: ["React", "Next.js", "Tailwind CSS", "Framer Motion"],
+  },
 ];
 
 /* ── Education ────────────────────────────────────────── */

@@ -88,7 +88,7 @@ export default function Tokenizer() {
           rows={3}
           spellCheck={false}
           placeholder="Type anything…"
-          className="w-full resize-none rounded-xl border border-white/10 bg-black/25 p-3.5 font-mono text-[13px] leading-relaxed text-text outline-none transition-colors placeholder:text-faint focus:border-violet/50"
+          className="autosize w-full resize-none rounded-xl border border-white/10 bg-black/25 p-3.5 font-mono text-[13px] leading-relaxed text-text outline-none transition-colors placeholder:text-faint focus:border-violet/50"
         />
       </label>
 

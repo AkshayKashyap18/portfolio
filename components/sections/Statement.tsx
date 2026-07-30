@@ -3,7 +3,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { profile } from "@/lib/data";
-import { easeExpo, inView, reveal, stagger } from "@/lib/motion";
 import KineticText from "@/components/ui/KineticText";
 
 const FACTS = [
@@ -15,6 +14,10 @@ const FACTS = [
 /**
  * Beat 2 — the particle field is spelling "AK" behind this, so the copy stays
  * short and the layout stays wide open.
+ *
+ * Reveals run on the native `view()` timeline (`.sda` classes). Framer is kept
+ * only for the scroll-linked letter-spacing, which genuinely needs a scroll
+ * progress value rather than a one-shot entrance.
  */
 export default function Statement() {
   const ref = useRef<HTMLElement>(null);
@@ -33,15 +36,9 @@ export default function Statement() {
       className="relative flex min-h-[100svh] scroll-mt-24 items-center px-6 py-32"
     >
       <div className="mx-auto w-full max-w-[1180px]">
-        <motion.p
-          variants={reveal}
-          initial="hidden"
-          whileInView="show"
-          viewport={inView}
-          className="mb-10 font-mono text-[10px] tracking-[0.28em] text-faint uppercase"
-        >
+        <p className="sda mb-10 font-mono text-[10px] tracking-[0.28em] text-faint uppercase">
           01 — Who
-        </motion.p>
+        </p>
 
         <motion.h2
           style={{ letterSpacing: spread }}
@@ -54,17 +51,10 @@ export default function Statement() {
         </motion.h2>
 
         <div className="mt-14 grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20">
-          <motion.div
-            variants={stagger(0, 0.14)}
-            initial="hidden"
-            whileInView="show"
-            viewport={inView}
-            className="space-y-5"
-          >
+          <div className="sda-stagger space-y-5">
             {profile.bio.map((para, i) => (
-              <motion.p
+              <p
                 key={i}
-                variants={reveal}
                 className={
                   i === 0
                     ? "text-[19px] leading-relaxed text-text text-pretty sm:text-[21px]"
@@ -72,34 +62,24 @@ export default function Statement() {
                 }
               >
                 {para}
-              </motion.p>
+              </p>
             ))}
-          </motion.div>
+          </div>
 
           {/* Facts, not a stats wall */}
-          <motion.dl
-            variants={stagger(0.2, 0.1)}
-            initial="hidden"
-            whileInView="show"
-            viewport={inView}
-            className="space-y-0 self-start"
-          >
+          <dl className="self-start">
             {FACTS.map((f) => (
-              <motion.div
+              <div
                 key={f.k}
-                variants={{
-                  hidden: { opacity: 0, x: -18 },
-                  show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: easeExpo } },
-                }}
-                className="flex items-baseline justify-between gap-6 border-b border-white/8 py-4"
+                className="sda-x flex items-baseline justify-between gap-6 border-b border-white/8 py-4"
               >
                 <dt className="font-mono text-[10px] tracking-[0.2em] text-faint uppercase">
                   {f.k}
                 </dt>
                 <dd className="text-right text-[14px] text-muted">{f.v}</dd>
-              </motion.div>
+              </div>
             ))}
-          </motion.dl>
+          </dl>
         </div>
       </div>
     </section>

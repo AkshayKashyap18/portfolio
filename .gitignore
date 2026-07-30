@@ -12,3 +12,14 @@ tsconfig.tsbuildinfo
 .vscode/
 .idea/
 Thumbs.db
+
+# ─────────────────────────────────────────────────────────
+# Confidential — must never reach a public repo.
+# Client-facing case-study material: real client names, named
+# client testimonials, internal project detail. The portfolio
+# deliberately contains only a de-identified version of this.
+# Committing it would be permanent, even if deleted later.
+# ─────────────────────────────────────────────────────────
+docs_details/
+*.pptx
+*.docx

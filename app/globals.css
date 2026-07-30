@@ -240,6 +240,61 @@ body {
   animation: scroll-cue 2.2s var(--ease-expo) infinite;
 }
 
+/* ─────────────────────────────────────────────
+   Architecture diagrams — flowing data
+   ───────────────────────────────────────────── */
+
+/*
+   A short round-capped dash travelling the length of an edge. `pathLength="1"`
+   normalizes the dash units, so one declaration works for edges of any length.
+*/
+@keyframes arch-flow {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.arch-flow {
+  stroke-dasharray: 0.045 0.955;
+  animation-name: arch-flow;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  animation-iteration-count: infinite;
+}
+
+/* Node flare as a pulse lands */
+@keyframes arch-node-flare {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  8% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  40% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+.arch-node-flare {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: arch-node-flare;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
 @keyframes caret {
   0%,
   49% {
@@ -263,6 +318,174 @@ body {
     #000 88%,
     transparent
   );
+}
+
+/* ─────────────────────────────────────────────
+   Native scroll-driven reveals
+   ─────────────────────────────────────────────
+
+   These run on the compositor thread, off the main thread — which matters here
+   because the main thread is busy driving a 42k-particle shader. Framer Motion's
+   whileInView does the same job on the main thread, so every reveal used to
+   compete with the field for frame budget.
+
+   Progressive enhancement: without `animation-timeline` support the elements
+   simply render in their final state (no animation is ever declared), so the
+   ~16% of browsers lacking it lose the motion and nothing else.
+   ───────────────────────────────────────────── */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes sda-in {
+      from {
+        opacity: 0;
+        transform: translate3d(0, 28px, 0);
+        filter: blur(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        filter: blur(0);
+      }
+    }
+
+    .sda {
+      animation: sda-in linear both;
+      animation-timeline: view();
+      /* Start as the element enters, finish well before it's centred. */
+      animation-range: entry 4% cover 26%;
+      will-change: opacity, transform;
+    }
+
+    /* Slide-in-from-left variant, for list rows. */
+    @keyframes sda-in-x {
+      from {
+        opacity: 0;
+        transform: translate3d(-18px, 0, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    .sda-x {
+      animation: sda-in-x linear both;
+      animation-timeline: view();
+      animation-range: entry 6% cover 22%;
+      will-change: opacity, transform;
+    }
+
+    /*
+       Stagger. Scroll-driven animations ignore `animation-delay` — progress is
+       tied to scroll position, not time — so the offset lives in
+       `animation-range` instead: each child starts a little later in the scroll.
+    */
+    .sda-stagger > * {
+      animation: sda-in linear both;
+      animation-timeline: view();
+      will-change: opacity, transform;
+    }
+    .sda-stagger > *:nth-child(1) {
+      animation-range: entry 4% cover 22%;
+    }
+    .sda-stagger > *:nth-child(2) {
+      animation-range: entry 8% cover 26%;
+    }
+    .sda-stagger > *:nth-child(3) {
+      animation-range: entry 12% cover 30%;
+    }
+    .sda-stagger > *:nth-child(4) {
+      animation-range: entry 16% cover 34%;
+    }
+    .sda-stagger > *:nth-child(5) {
+      animation-range: entry 20% cover 38%;
+    }
+    .sda-stagger > *:nth-child(6) {
+      animation-range: entry 24% cover 42%;
+    }
+    .sda-stagger > *:nth-child(n + 7) {
+      animation-range: entry 28% cover 46%;
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   View Transitions — the work rail morphing between groups
+   ───────────────────────────────────────────── */
+@supports (view-transition-name: none) {
+  .work-rail-track {
+    view-transition-name: work-rail;
+  }
+
+  /*
+     Critically: disable the ROOT transition. By default a view transition
+     snapshots the entire page — including the WebGL canvas — and cross-fades it,
+     which makes the particle field visibly freeze and flicker. Killing the root
+     animation means only the named rail transitions.
+  */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-old(work-rail) {
+    animation: rail-out 260ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  ::view-transition-new(work-rail) {
+    animation: rail-in 420ms var(--ease-expo) both;
+  }
+
+  @keyframes rail-out {
+    to {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.985);
+    }
+  }
+  @keyframes rail-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Type & shape craft
+   ───────────────────────────────────────────── */
+
+/*
+   Trims the leading above and below display type so the optical top of the
+   glyphs aligns with the box, instead of the font's metric ascender. Removes the
+   phantom gap over every big heading.
+*/
+@supports (text-box-trim: trim-both) {
+  h1,
+  h2,
+  h3 {
+    text-box-trim: trim-both;
+    text-box-edge: cap alphabetic;
+  }
+}
+
+/*
+   Squircle corners — a superellipse rather than a circular arc, the curve Apple
+   uses. Degrades silently to the plain border-radius everywhere else.
+*/
+@supports (corner-shape: squircle) {
+  .glass,
+  .rounded-3xl,
+  .rounded-2xl {
+    corner-shape: squircle;
+  }
+}
+
+/* Textarea that grows with its content, no JS measuring */
+@supports (field-sizing: content) {
+  textarea.autosize {
+    field-sizing: content;
+    min-height: 4.5rem;
+    max-height: 14rem;
+  }
 }
 
 /* ─────────────────────────────────────────────

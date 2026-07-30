@@ -37,12 +37,14 @@ export default function BeatRail() {
             className="group flex items-center justify-end gap-3 py-1.5"
             aria-current={isActive ? "true" : undefined}
           >
-            {/* Label — only the active beat is named, rest on hover */}
+            {/*
+              Labels appear on hover only. They used to sit permanently over the
+              full-bleed work rail and collide with card copy; the dashes alone
+              read as chrome and never fight content.
+            */}
             <span
-              className={`font-mono text-[9px] tracking-[0.2em] uppercase transition-all duration-400 ${
-                isActive
-                  ? "text-text opacity-100"
-                  : "text-faint opacity-0 group-hover:opacity-100"
+              className={`rounded-full bg-bg/70 px-2 py-0.5 font-mono text-[9px] tracking-[0.2em] uppercase opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100 ${
+                isActive ? "text-text" : "text-faint"
               }`}
             >
               {meta.name}

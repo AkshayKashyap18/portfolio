@@ -63,8 +63,7 @@ export default function OpengraphImage() {
             fontFamily: "monospace",
           }}
         >
-          <div style={{ width: 10, height: 10, borderRadius: 9999, background: "#A3E635" }} />
-          Open to work
+          AI · Backend · LLM Systems
           <div style={{ width: 60, height: 1, background: "rgba(255,255,255,0.2)" }} />
           Bangalore, India
         </div>

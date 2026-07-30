@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { useEffect, useState } from "react";
 import { detectTier, type TierConfig } from "@/lib/deviceTier";
 import ParticleField from "./ParticleField";
+import GutterStreams from "./GutterStreams";
 
 /**
  * The fixed, full-viewport WebGL layer that every section sits on top of.
@@ -57,6 +58,8 @@ export default function Scene() {
         }}
       >
         <ParticleField count={config!.particles} />
+        {/* The nebula continuing past the reading column, into the gutters */}
+        <GutterStreams count={Math.round(config!.particles / 32)} />
       </Canvas>
     </div>
   );
