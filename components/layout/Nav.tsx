@@ -6,6 +6,7 @@ import { useState } from "react";
 import { navSections, profile } from "@/lib/data";
 import { easeExpo, springSnappy } from "@/lib/motion";
 import { useActiveSection } from "@/lib/useActiveSection";
+import ScrambleText from "@/components/ui/ScrambleText";
 
 const ids = navSections.map((s) => s.id);
 
@@ -13,6 +14,8 @@ export default function Nav({ onOpenPalette }: { onOpenPalette: () => void }) {
   const active = useActiveSection(ids);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Bumped on hover to replay the wordmark decode.
+  const [scrambleKey, setScrambleKey] = useState(0);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 40));
@@ -30,20 +33,22 @@ export default function Nav({ onOpenPalette }: { onOpenPalette: () => void }) {
             scrolled ? "glass" : "border border-transparent"
           }`}
         >
-          {/* Monogram */}
+          {/* Monogram — the wordmark decodes out of katakana on load and on hover */}
           <a
             href="#top"
             className="group flex items-center gap-2.5 pl-1"
             aria-label="Back to top"
+            onMouseEnter={() => setScrambleKey((k) => k + 1)}
           >
             <span className="relative grid size-8 place-items-center rounded-lg bg-gradient-to-br from-violet to-cyan font-mono text-[13px] font-bold text-white">
               AK
             </span>
-            <span className="hidden font-mono text-xs tracking-tight text-muted transition-colors group-hover:text-text sm:block">
-              {profile.firstName.toLowerCase()}
-              <span className="text-violet">.</span>
-              dev
-            </span>
+            <ScrambleText
+              text={`${profile.firstName.toLowerCase()}.dev`}
+              accent="."
+              trigger={scrambleKey}
+              className="hidden font-mono text-xs tracking-tight text-muted transition-colors group-hover:text-text sm:block"
+            />
           </a>
 
           {/* Desktop links */}
