@@ -25,15 +25,6 @@ export const metadata: Metadata = {
     template: `%s — ${profile.name}`,
   },
   description: profile.pitch,
-  keywords: [
-    "Akshay Kashyap",
-    "AI Developer",
-    "Backend Engineer",
-    "FastAPI",
-    "Python",
-    "LLM",
-    "Bangalore",
-  ],
   authors: [{ name: profile.name, url: profile.github }],
   creator: profile.name,
   openGraph: {
