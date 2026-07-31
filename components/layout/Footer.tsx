@@ -12,7 +12,7 @@ export default function Footer({ onToggleClean, clean }: { onToggleClean: () => 
             {profile.name}
           </p>
           <p className="mt-1 font-mono text-[10px] text-faint">
-            © {new Date().getFullYear()} · Built with Next.js, Tailwind &amp; Framer Motion
+            © {new Date().getFullYear()}
           </p>
         </div>
 
