@@ -386,16 +386,24 @@ export default function NeuralTrainer() {
             Reset weights
           </button>
 
+          {/*
+            The swatch alone carries the meaning, which leaves nothing for a
+            screen reader to announce and nothing for anyone who cannot separate
+            the two hues — hence the written class name beside it.
+          */}
           <button
             type="button"
             onClick={() => setBrush((b) => (b === 1 ? 0 : 1))}
+            aria-label={`Brush: adding class ${brush}. Activate to switch to class ${brush === 1 ? 0 : 1}.`}
             className="ml-auto inline-flex items-center gap-2 rounded-full border border-white/12 px-3 py-2 font-mono text-[11px] text-muted transition-colors hover:text-text"
           >
-            <Plus className="size-3" />
+            <Plus className="size-3" aria-hidden />
             <span
               className="size-2.5 rounded-full"
               style={{ background: brush === 1 ? "#22d3ee" : "#7c5cff" }}
+              aria-hidden
             />
+            <span aria-hidden>class {brush}</span>
           </button>
         </div>
       </div>

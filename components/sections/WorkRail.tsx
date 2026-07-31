@@ -19,6 +19,7 @@ import KineticText from "@/components/ui/KineticText";
 import SegmentedControl, { type Segment } from "@/components/ui/SegmentedControl";
 import ArchitectureDiagram from "./ArchitectureDiagram";
 import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 const ACCENT = {
   violet: "text-violet",
@@ -32,18 +33,39 @@ const ACCENT_BORDER = {
   lime: "border-lime/50",
 } as const;
 
-function Panel({ project, index }: { project: Project; index: number }) {
+function Panel({
+  project,
+  index,
+  stacked,
+}: {
+  project: Project;
+  index: number;
+  stacked: boolean;
+}) {
   return (
     <article
       id={`project-${project.slug}`}
-      className="relative flex h-full w-[88vw] max-w-[980px] shrink-0 flex-col justify-center sm:w-[76vw]"
+      className={
+        stacked
+          ? "relative flex w-full flex-col"
+          : "relative flex h-full w-[76vw] max-w-[980px] shrink-0 flex-col justify-center"
+      }
     >
       {/*
         Container query, not a viewport breakpoint. These cards sit in a
         horizontal rail at ~76vw, so the viewport width says nothing useful about
         how much room the card actually has — its own inline size does.
       */}
-      <div className="glass gradient-border relative overflow-hidden rounded-3xl p-6 @container sm:p-8">
+      <div
+        className={`glass gradient-border relative rounded-3xl p-6 @container sm:p-8 ${
+          stacked
+            ? "overflow-hidden"
+            : // Bounded by the rail's height. `overflow-y-auto` rather than
+              // `hidden` so that if a card ever does outgrow the rail, the rest
+              // is reachable instead of silently cut off.
+              "max-h-full overflow-x-hidden overflow-y-auto"
+        }`}
+      >
         <span
           className="pointer-events-none absolute -top-8 right-5 font-mono text-[120px] leading-none font-bold text-white/[0.022] select-none sm:text-[170px]"
           aria-hidden
@@ -179,10 +201,24 @@ function Panel({ project, index }: { project: Project; index: number }) {
   );
 }
 
+/**
+ * The horizontal rail pins one card to the viewport at a time, so a card can
+ * never be taller than the window. The tallest card needs ~653px once it reaches
+ * its 980px max width, and the sticky heading above it eats ~140px — so below
+ * roughly 840px of viewport height there is genuinely nowhere to put the content
+ * and it would have to be clipped. Narrow viewports are worse still: under
+ * ~1180px the card's own container queries collapse it to a single column and it
+ * grows past 1300px tall. Both cases get the vertical stack instead, where the
+ * page scroll does the work and nothing is hidden.
+ */
+const RAIL_VIEWPORT = "(min-width: 1180px) and (min-height: 840px)";
+
 export default function WorkRail() {
   const outerRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotionSafe();
+  const railFits = useMediaQuery(RAIL_VIEWPORT);
+  const stacked = reduce || !railFits;
   const [distance, setDistance] = useState(0);
   // Default to production when it exists, otherwise the first group that does —
   // so the rail is never empty regardless of what's in data.ts.
@@ -217,10 +253,14 @@ export default function WorkRail() {
   useEffect(() => {
     const measure = () => {
       const track = trackRef.current;
-      if (!track) return;
-      setDistance(Math.max(0, track.scrollWidth - window.innerWidth + 48));
+      if (track) {
+        setDistance(Math.max(0, track.scrollWidth - window.innerWidth + 48));
+      }
       // The section's height derives from `distance`, so the particle-field beat
-      // anchors must be recomputed or the formations drift out of sync.
+      // anchors must be recomputed or the formations drift out of sync. This has
+      // to run in stacked mode too: dropping the rail changes the section from
+      // `100svh + distance` to its natural height, which moves every beat below
+      // it up the page.
       measureBeats();
     };
     measure();
@@ -232,7 +272,7 @@ export default function WorkRail() {
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [kind]);
+  }, [kind, stacked]);
 
   function switchKind(next: string) {
     if (next === kind) return;
@@ -280,24 +320,51 @@ export default function WorkRail() {
     </>
   );
 
-  // Reduced motion / small screens keep a plain vertical stack.
-  if (reduce) {
+  const closing = (
+    <>
+      <p className="font-mono text-[10px] tracking-[0.22em] text-faint uppercase">
+        End of rail
+      </p>
+      <p className="mt-4 text-2xl font-medium tracking-[-0.03em] text-muted text-pretty">
+        {kind === "production"
+          ? "There's more I can't show publicly — happy to talk through it."
+          : "More in progress — and one of them could be yours."}
+      </p>
+      <a
+        href="#contact"
+        data-cursor="talk"
+        className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-violet to-cyan px-5 py-2.5 text-[13px] font-medium text-white transition-transform duration-300 hover:scale-[1.03]"
+      >
+        Start a conversation
+        <ArrowUpRight className="size-3.5" />
+      </a>
+    </>
+  );
+
+  // Reduced motion, and any viewport the pinned rail cannot fit a card into,
+  // read as a plain vertical stack.
+  if (stacked) {
     return (
-      <section id="work" className="scroll-mt-24 px-6 py-32">
+      <section id="work" className="scroll-mt-24 px-6 py-28 sm:py-32">
         <div className="mx-auto max-w-[1180px]">
           {heading}
           <div className="mt-8">
             <SegmentedControl
               segments={segments}
               active={kind}
-              onChange={(k) => setKind(k as ProjectKind)}
+              onChange={switchKind}
               ariaLabel="Filter work by type"
             />
           </div>
           <div className="mt-12 space-y-8">
             {shown.map((p, i) => (
-              <Panel key={p.slug} project={p} index={i} />
+              <Panel key={p.slug} project={p} index={i} stacked />
             ))}
+          </div>
+          {/* The rail's closing card. Without this the stacked reading loses the
+              only call to action in the whole section. */}
+          <div className="mt-14 flex flex-col border-t border-white/8 pt-10">
+            {closing}
           </div>
         </div>
       </section>
@@ -350,29 +417,17 @@ export default function WorkRail() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: easeExpo }}
-          className="work-rail-track flex h-[74vh] items-stretch gap-6 pl-6 will-change-transform sm:gap-8 sm:pl-[max(1.5rem,calc((100vw-1180px)/2))]"
+          // `flex-1` rather than a fixed `74vh`: the track takes whatever the
+          // sticky viewport has left under the heading, which is always more than
+          // 74vh and gives the tallest card the room it needs.
+          className="work-rail-track flex min-h-0 flex-1 items-stretch gap-6 pl-6 will-change-transform sm:gap-8 sm:pl-[max(1.5rem,calc((100vw-1180px)/2))]"
         >
           {shown.map((p, i) => (
-            <Panel key={p.slug} project={p} index={i} />
+            <Panel key={p.slug} project={p} index={i} stacked={false} />
           ))}
 
           <div className="flex h-full w-[60vw] max-w-[420px] shrink-0 flex-col justify-center pr-6">
-            <p className="font-mono text-[10px] tracking-[0.22em] text-faint uppercase">
-              End of rail
-            </p>
-            <p className="mt-4 text-2xl font-medium tracking-[-0.03em] text-muted text-pretty">
-              {kind === "production"
-                ? "There's more I can't show publicly — happy to talk through it."
-                : "More in progress — and one of them could be yours."}
-            </p>
-            <a
-              href="#contact"
-              data-cursor="talk"
-              className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-violet to-cyan px-5 py-2.5 text-[13px] font-medium text-white transition-transform duration-300 hover:scale-[1.03]"
-            >
-              Start a conversation
-              <ArrowUpRight className="size-3.5" />
-            </a>
+            {closing}
           </div>
         </motion.div>
       </div>

@@ -45,7 +45,9 @@ export default function Scene() {
           preserveDrawingBuffer: false,
         }}
         camera={{ position: [0, 0, 9], fov: 55, near: 0.1, far: 60 }}
-        // Pause rendering when the tab is hidden.
+        // Continuous, because the field drifts and morphs with no discrete
+        // invalidation point to render on demand from. A hidden tab costs
+        // nothing regardless: the browser stops servicing requestAnimationFrame.
         frameloop="always"
         onCreated={({ gl }) => {
           gl.setClearColor(0x000000, 0);
