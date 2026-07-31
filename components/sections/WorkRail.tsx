@@ -37,10 +37,13 @@ function Panel({
   project,
   index,
   stacked,
+  fit = 1,
 }: {
   project: Project;
   index: number;
   stacked: boolean;
+  /** Shrink factor so the card fits the rail's height. See FIT_REFERENCE. */
+  fit?: number;
 }) {
   return (
     <article
@@ -50,6 +53,13 @@ function Panel({
           ? "relative flex w-full flex-col"
           : "relative flex h-full w-[76vw] max-w-[980px] shrink-0 flex-col justify-center"
       }
+      /*
+        `zoom`, not `transform: scale`. A transform would shrink the card
+        visually while it kept its original layout width, leaving a gap in the
+        rail and throwing off the travel distance. zoom scales the layout box, so
+        the rail packs tight and scrollWidth stays truthful.
+      */
+      style={stacked || fit >= 1 ? undefined : { zoom: fit }}
     >
       {/*
         Container query, not a viewport breakpoint. These cards sit in a
@@ -202,16 +212,34 @@ function Panel({
 }
 
 /**
- * The horizontal rail pins one card to the viewport at a time, so a card can
- * never be taller than the window. The tallest card needs ~653px once it reaches
- * its 980px max width, and the sticky heading above it eats ~140px — so below
- * roughly 840px of viewport height there is genuinely nowhere to put the content
- * and it would have to be clipped. Narrow viewports are worse still: under
- * ~1180px the card's own container queries collapse it to a single column and it
- * grows past 1300px tall. Both cases get the vertical stack instead, where the
- * page scroll does the work and nothing is hidden.
+ * When the pinned rail is used at all.
+ *
+ * This was `(min-width: 1180px) and (min-height: 840px)`, derived from the
+ * tallest card's measured 653px plus ~140px of sticky heading. That arithmetic
+ * was right and the conclusion was wrong: a 1440x900 SCREEN is only about 760px
+ * of viewport once browser chrome is taken out, and 1366x768 leaves ~630px — so
+ * the height clause quietly demoted most real laptops to the vertical stack and
+ * took the horizontal motion away from the people most likely to see it.
+ *
+ * Width still matters and is not negotiable: under ~1024px the card's own
+ * container queries collapse it to one column and it grows past 1300px tall, and
+ * no amount of shrinking makes that readable. Height is handled by scaling the
+ * card to the room available instead of refusing to draw it.
  */
-const RAIL_VIEWPORT = "(min-width: 1180px) and (min-height: 840px)";
+const RAIL_VIEWPORT = "(min-width: 1024px)";
+
+/**
+ * Height the tallest card wants, plus the sticky heading above it.
+ *
+ * Deliberately a constant rather than a measurement. Measuring the card and then
+ * scaling it changes the measurement, and a ResizeObserver watching the thing it
+ * resizes is how you get a layout loop. Slight error here is harmless — the card
+ * keeps `overflow-y-auto`, so worst case a little content scrolls rather than
+ * disappearing.
+ */
+const FIT_REFERENCE = 690;
+const FIT_CHROME = 150;
+const FIT_FLOOR = 0.76;
 
 export default function WorkRail() {
   const outerRef = useRef<HTMLElement>(null);
@@ -220,6 +248,8 @@ export default function WorkRail() {
   const railFits = useMediaQuery(RAIL_VIEWPORT);
   const stacked = reduce || !railFits;
   const [distance, setDistance] = useState(0);
+  // 1 until measured, so the first client render matches the server.
+  const [fit, setFit] = useState(1);
   // Default to production when it exists, otherwise the first group that does —
   // so the rail is never empty regardless of what's in data.ts.
   const [kind, setKind] = useState<ProjectKind>(() =>
@@ -250,6 +280,24 @@ export default function WorkRail() {
 
   // Measure how far the rail needs to travel. Re-runs when the tab changes,
   // because the card count — and therefore the distance — changes with it.
+  // How much the card has to shrink to fit the height this viewport actually has.
+  useEffect(() => {
+    if (stacked) {
+      setFit(1);
+      return;
+    }
+    const measureFit = () => {
+      const available = window.innerHeight - FIT_CHROME;
+      const next = Math.min(1, Math.max(FIT_FLOOR, available / FIT_REFERENCE));
+      // Rounded, and only committed on a real change — this feeds a style that
+      // the distance ResizeObserver reacts to.
+      setFit((prev) => (Math.abs(prev - next) > 0.005 ? Math.round(next * 1000) / 1000 : prev));
+    };
+    measureFit();
+    window.addEventListener("resize", measureFit);
+    return () => window.removeEventListener("resize", measureFit);
+  }, [stacked]);
+
   useEffect(() => {
     const measure = () => {
       const track = trackRef.current;
@@ -272,7 +320,7 @@ export default function WorkRail() {
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [kind, stacked]);
+  }, [kind, stacked, fit]);
 
   function switchKind(next: string) {
     if (next === kind) return;
@@ -429,7 +477,7 @@ export default function WorkRail() {
           className="work-rail-track flex min-h-0 flex-1 items-stretch gap-6 pl-6 will-change-transform sm:gap-8 sm:pl-[max(1.5rem,calc((100vw-1180px)/2))]"
         >
           {shown.map((p, i) => (
-            <Panel key={p.slug} project={p} index={i} stacked={false} />
+            <Panel key={p.slug} project={p} index={i} stacked={false} fit={fit} />
           ))}
 
           <div className="flex h-full w-[60vw] max-w-[420px] shrink-0 flex-col justify-center pr-6">
