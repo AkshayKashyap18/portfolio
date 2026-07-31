@@ -343,9 +343,25 @@ export default function WorkRail() {
 
   // Reduced motion, and any viewport the pinned rail cannot fit a card into,
   // read as a plain vertical stack.
-  if (stacked) {
-    return (
-      <section id="work" className="scroll-mt-24 px-6 py-28 sm:py-32">
+  //
+  // Both layouts share ONE <section>, and the reason is load-bearing rather than
+  // cosmetic. useScroll({ target: outerRef }) binds to whatever the ref holds
+  // when its layout effect runs, and silently falls back to tracking the whole
+  // DOCUMENT if that is null. `railFits` is false on the first client render by
+  // design — that is what keeps hydration honest — so returning a separate
+  // stacked <section> without the ref meant the very first commit left the ref
+  // empty, the fallback engaged, and the rail ended up driven by page progress
+  // instead of section progress: already translated ~520px by the time it
+  // pinned, with the first card cut off, and only ~29% of its travel used.
+  // Keeping the ref mounted from the first commit is what makes it correct.
+  return (
+    <section
+      ref={outerRef}
+      id="work"
+      className={stacked ? "scroll-mt-24 px-6 py-28 sm:py-32" : "relative scroll-mt-0"}
+      style={stacked ? undefined : { height: `calc(100svh + ${distance}px)` }}
+    >
+      {stacked ? (
         <div className="mx-auto max-w-[1180px]">
           {heading}
           <div className="mt-8">
@@ -367,17 +383,7 @@ export default function WorkRail() {
             {closing}
           </div>
         </div>
-      </section>
-    );
-  }
-
-  return (
-    <section
-      ref={outerRef}
-      id="work"
-      className="relative scroll-mt-0"
-      style={{ height: `calc(100svh + ${distance}px)` }}
-    >
+      ) : (
       <div className="sticky top-0 flex h-[100svh] flex-col justify-center overflow-hidden">
         <motion.div
           variants={stagger(0, 0.1)}
@@ -431,6 +437,7 @@ export default function WorkRail() {
           </div>
         </motion.div>
       </div>
+      )}
     </section>
   );
 }
