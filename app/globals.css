@@ -8,8 +8,13 @@
   --color-bg-soft: #0b0b12;
   --color-text: #ededf2;
   --color-muted: #9494a3;
-  /* Lifted from #55555f — the original failed contrast on the mono labels. */
-  --color-faint: #6e6e7c;
+  /*
+    Twice-corrected. #55555f was the original; #6e6e7c was supposed to fix it but
+    measures 4.01:1 on --color-bg, still under the 4.5:1 that AA asks for normal
+    text — and this token is used almost exclusively on 10–11px mono labels, so
+    the large-text allowance never applies. #7a7a88 measures 4.75:1.
+  */
+  --color-faint: #7a7a88;
   --color-violet: #7c5cff;
   --color-cyan: #22d3ee;
   --color-lime: #a3e635;
@@ -574,6 +579,14 @@ body[data-clean="true"] {
   --color-text: #111114;
   --color-muted: #3f3f46;
   --color-faint: #52525b;
+  /*
+    These have to move with the rest. Several surfaces are painted with an alpha
+    of the background token rather than a literal — bg-bg/80 on the mobile nav
+    sheet, bg-bg/70 on the palette scrim — so leaving them near-black composited
+    a dark panel under this palette's dark text: 1.61:1 on the nav sheet.
+  */
+  --color-bg: #ffffff;
+  --color-bg-soft: #f4f4f5;
   /* Accents darkened to hold contrast on white. */
   --color-violet: #5b3fd6;
   --color-cyan: #0e7490;
@@ -612,6 +625,20 @@ body[data-clean="true"] .gradient-border {
   border: none !important;
   backdrop-filter: none !important;
   box-shadow: none !important;
+}
+/*
+  One exception to the flattening: a dialog still needs to read as a surface
+  sitting above the page. Stripped of its glass it had no background at all, so
+  its text landed straight on the page's own text with only a pale scrim between.
+  The hairline borders inside it are white/8 alphas, which are invisible here.
+*/
+body[data-clean="true"] [role="dialog"] .glass {
+  background: #fff !important;
+  border: 1px solid #d4d4d8 !important;
+  box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.25) !important;
+}
+body[data-clean="true"] [role="dialog"] [class*="border-white"] {
+  border-color: #e4e4e7 !important;
 }
 body[data-clean="true"] .text-gradient {
   background: none !important;

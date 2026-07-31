@@ -29,6 +29,10 @@ export default function BeatRail() {
       {BEAT_IDS.map((id, i) => {
         const isActive = active === id;
         const meta = LABELS[id];
+        // LABELS and BEAT_IDS are both hardcoded and currently agree. If a beat
+        // is ever added to one and not the other, skip the entry rather than
+        // reading `.name` off undefined and taking the whole page down.
+        if (!meta) return null;
 
         return (
           <a

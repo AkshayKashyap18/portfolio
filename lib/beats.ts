@@ -18,9 +18,18 @@ export const BEAT_IDS = ["top", "about", "work", "stack", "playground", "contact
 export const BEAT_OPACITY = [0.95, 0.6, 0.42, 0.55, 0.48, 1.0] as const;
 
 let anchors: number[] = [];
+/**
+ * Whether the last measurement actually found every section.
+ *
+ * Tracked separately because the padding below keeps `anchors` at full length
+ * even when nothing was found, which made a length check report success on a
+ * page containing none of the six ids.
+ */
+let complete = false;
 
 export function measureBeats(): void {
   const next: number[] = [];
+  let found = 0;
 
   BEAT_IDS.forEach((id) => {
     const el = document.getElementById(id);
@@ -28,6 +37,7 @@ export function measureBeats(): void {
       next.push(next.length ? next[next.length - 1] + window.innerHeight : 0);
       return;
     }
+    found += 1;
     const rect = el.getBoundingClientRect();
     const top = rect.top + window.scrollY;
     // Centre of the section is where its formation should be fully resolved.
@@ -40,10 +50,11 @@ export function measureBeats(): void {
   }
 
   anchors = next;
+  complete = found === BEAT_IDS.length;
 }
 
 export function hasBeats(): boolean {
-  return anchors.length === BEAT_IDS.length;
+  return complete && anchors.length === BEAT_IDS.length;
 }
 
 /** Fractional stage index for a given scroll position. */
