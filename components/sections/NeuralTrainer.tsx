@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Info, Pause, Play, Plus, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { easeExpo } from "@/lib/motion";
@@ -14,6 +14,7 @@ import {
   type PresetKey,
 } from "@/lib/mlp";
 import { publishNet, setNetLive } from "@/lib/netBridge";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 /** Boundary is evaluated on a GRID×GRID lattice — the visual cost driver. */
 const GRID = 34;
@@ -23,7 +24,7 @@ const HIDDEN_OPTIONS = [4, 6, 8] as const;
 
 export default function NeuralTrainer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
 
   const [preset, setPreset] = useState<PresetKey>("xor");
   const [hidden, setHidden] = useState<number>(6);
@@ -167,6 +168,21 @@ export default function NeuralTrainer() {
       cancelAnimationFrame(raf);
     };
   }, [running, lr, draw]);
+
+  /*
+    Honour the motion preference once it is known.
+
+    `running` starts true for everyone so the server and first client render
+    agree, and the observer below bails out under reduced motion — so without
+    this the network would train continuously for exactly the people who asked
+    it not to.
+  */
+  useEffect(() => {
+    if (reduce) {
+      setRunning(false);
+      setNetLive(false);
+    }
+  }, [reduce]);
 
   // Pause when scrolled away — training is real CPU work.
   useEffect(() => {

@@ -1,18 +1,14 @@
 "use client";
 
-import {
-  motion,
-  useReducedMotion,
+import {motion,
   useScroll,
   useSpring,
-  useTransform,
-} from "framer-motion";
+  useTransform} from "framer-motion";
 import { ArrowUpRight, Github } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   KIND_LABEL,
-  profile,
   projects,
   type Project,
   type ProjectKind,
@@ -22,6 +18,7 @@ import { easeExpo, inView, reveal, stagger } from "@/lib/motion";
 import KineticText from "@/components/ui/KineticText";
 import SegmentedControl, { type Segment } from "@/components/ui/SegmentedControl";
 import ArchitectureDiagram from "./ArchitectureDiagram";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 const ACCENT = {
   violet: "text-violet",
@@ -185,7 +182,7 @@ function Panel({ project, index }: { project: Project; index: number }) {
 export default function WorkRail() {
   const outerRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const [distance, setDistance] = useState(0);
   // Default to production when it exists, otherwise the first group that does —
   // so the rail is never empty regardless of what's in data.ts.

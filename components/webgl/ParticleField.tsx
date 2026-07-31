@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { buildFormations, textFormation } from "@/lib/formations";
 import { NET_PARAM_SLOTS, NET_VEC4_COUNT } from "@/lib/mlp";
+import type { Tier } from "@/lib/deviceTier";
 import { netBridge } from "@/lib/netBridge";
 import { onSecret, secretDisplay, secretState } from "@/lib/secret";
 import { hasBeats, opacityFromStage, stageFromScroll } from "@/lib/beats";
@@ -27,7 +28,7 @@ function shapeTransition(t: number): number {
   return eased;
 }
 
-export default function ParticleField({ count, tier }: { count: number; tier: string }) {
+export default function ParticleField({ count, tier }: { count: number; tier: Tier }) {
   const pointsRef = useRef<THREE.Points>(null);
   const { size, camera } = useThree();
 

@@ -34,13 +34,10 @@ export default function ConsoleGreeting() {
     const accent = "color:#22d3ee;font-family:monospace;font-size:11px";
 
     const row = (k: string, v: string) => {
-      // eslint-disable-next-line no-console
       console.log(`%c${k.padEnd(13)}%c${v}`, label, value);
     };
 
-    // eslint-disable-next-line no-console
     console.log(`%c${profile.firstName.toUpperCase()} ${profile.lastName.toUpperCase()}`, heading);
-    // eslint-disable-next-line no-console
     console.log(`%c${profile.roles.join(" · ")}`, accent);
 
     row("particles", tier.particles.toLocaleString());
@@ -50,12 +47,10 @@ export default function ConsoleGreeting() {
     row("shader", "custom GLSL, no post-processing");
     row("network", "MLP + backprop, written from scratch");
 
-    // eslint-disable-next-line no-console
     console.log(
       "%cSo you opened the console. Try holding the mouse down on the background — and there's more than that hidden in here.",
       "color:#9494a3;font-style:italic;font-size:11px",
     );
-    // eslint-disable-next-line no-console
     console.log(`%c${profile.github}`, "color:#7c5cff;font-family:monospace;font-size:11px");
   }, []);
 

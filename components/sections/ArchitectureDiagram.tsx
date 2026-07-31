@@ -1,9 +1,10 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import type { Project } from "@/lib/data";
 import { easeExpo } from "@/lib/motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 const ACCENT = {
   violet: "#7c5cff",
@@ -30,7 +31,7 @@ const EDGE_STAGGER = 0.34;
  * round at any aspect ratio.
  */
 export default function ArchitectureDiagram({ project }: { project: Project }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const ref = useRef<HTMLDivElement>(null);
   // Only animate while on screen — six looping animations per card adds up.
   const visible = useInView(ref, { margin: "10%" });

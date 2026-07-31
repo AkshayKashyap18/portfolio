@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { easeExpo } from "@/lib/motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 type Props = {
   text: string;
@@ -31,7 +32,7 @@ export default function KineticText({
   play = true,
   as = "span",
 }: Props) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const Tag = motion[as];
 
   const words = text.split(" ");
