@@ -22,6 +22,15 @@ type ScrollState = {
   pointerDown: boolean;
   /** Timestamp of the last release, so the field can fire a shockwave. */
   pointerReleasedAt: number;
+  /**
+   * Click shockwave. Frozen at the exact click point (not the smoothed
+   * pointer) so the expanding ring stays anchored where the visitor clicked
+   * for the life of the ripple.
+   */
+  rippleX: number;
+  rippleY: number;
+  /** Timestamp the current ripple began, or -Infinity when none is active. */
+  rippleAt: number;
 };
 
 export const scrollState: ScrollState = {
@@ -33,6 +42,9 @@ export const scrollState: ScrollState = {
   pointerActive: false,
   pointerDown: false,
   pointerReleasedAt: -Infinity,
+  rippleX: 0,
+  rippleY: 0,
+  rippleAt: -Infinity,
 };
 
 /** Subscribers that DO need React updates (nav, progress bar) — throttled. */
@@ -69,4 +81,14 @@ export function setPointerDown(down: boolean) {
     scrollState.pointerReleasedAt = performance.now();
   }
   scrollState.pointerDown = down;
+}
+
+/**
+ * Fire a shockwave ring from a normalized point (−1..1, origin at centre).
+ * The field reads rippleAt each frame and expands a ring outward from here.
+ */
+export function triggerRipple(x: number, y: number) {
+  scrollState.rippleX = x;
+  scrollState.rippleY = y;
+  scrollState.rippleAt = performance.now();
 }

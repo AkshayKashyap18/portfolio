@@ -22,13 +22,13 @@ export default function Hero() {
       id="top"
       className="relative flex min-h-[100svh] flex-col justify-end px-6 pb-16 sm:pb-20"
     >
-      <div className="mx-auto w-full max-w-[1180px]">
+      <div className="velocity-tilt mx-auto w-full max-w-[1180px]">
         {/* Eyebrow */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={ready ? { opacity: 1 } : { opacity: 0 }}
           transition={{ duration: 1, delay: 0.85 }}
-          className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.28em] text-muted uppercase [text-shadow:0_1px_12px_rgba(7,7,11,0.9)]"
+          className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] tracking-[0.28em] text-muted uppercase [text-shadow:0_0_3px_rgba(10,9,8,0.98),0_0_9px_rgba(10,9,8,0.85),0_1px_14px_rgba(10,9,8,0.7)]"
         >
           <span className="text-text">{profile.focus}</span>
           <span className="hidden text-white/20 sm:inline">/</span>
@@ -38,7 +38,7 @@ export default function Hero() {
         </motion.div>
 
         {/* Name — the only large type on the screen */}
-        <h1 className="text-[clamp(3rem,13vw,10.5rem)] leading-[0.85] font-semibold tracking-[-0.055em]">
+        <h1 className="text-[clamp(3rem,13vw,10.5rem)] leading-[0.85] font-semibold tracking-[-0.028em]">
           <KineticText
             text="Akshay"
             immediate
@@ -47,7 +47,7 @@ export default function Hero() {
             stagger={0.045}
             as="span"
           />
-          <span className="block text-muted/50">
+          <span className="block text-muted/70">
             <KineticText
               text="Kashyap"
               immediate

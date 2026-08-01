@@ -2,7 +2,7 @@
 
 import Lenis from "lenis";
 import { useEffect, useRef } from "react";
-import { setPointer, setPointerDown, setScroll } from "@/lib/scrollStore";
+import { setPointer, setPointerDown, setScroll, triggerRipple } from "@/lib/scrollStore";
 
 /**
  * Lenis smooth scroll, driving the module-level scroll store.
@@ -90,6 +90,12 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       const el = e.target as HTMLElement | null;
       if (el?.closest("a, button, input, textarea, select, [role='tab']")) return;
       setPointerDown(true);
+      // Emit a shockwave ring from the exact click point — instant feedback,
+      // independent of the slower press-and-hold collapse.
+      triggerRipple(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -((e.clientY / window.innerHeight) * 2 - 1),
+      );
     };
     const onUp = () => setPointerDown(false);
 

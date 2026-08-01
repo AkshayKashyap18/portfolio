@@ -28,7 +28,7 @@ export default function Contact() {
         </div>
 
         <h2
-          className="mt-6 max-w-3xl text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] font-semibold tracking-[-0.04em] text-balance"
+          className="mt-6 max-w-3xl text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] font-semibold tracking-[-0.024em] text-balance"
         >
           Let&apos;s build something{" "}
           <span className="text-gradient">intelligent</span>.

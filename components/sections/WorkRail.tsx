@@ -67,7 +67,7 @@ function Panel({
         how much room the card actually has — its own inline size does.
       */}
       <div
-        className={`glass gradient-border relative rounded-3xl p-6 @container sm:p-8 ${
+        className={`glass panel-surface gradient-border relative rounded-3xl p-6 @container sm:p-8 ${
           stacked
             ? "overflow-hidden"
             : // Bounded by the rail's height. `overflow-y-auto` rather than
@@ -100,7 +100,7 @@ function Panel({
                 </p>
               </div>
 
-              <h3 className="mt-2 text-[clamp(1.6rem,3.2vw,2.6rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
+              <h3 className="mt-2 text-[clamp(1.6rem,3.2vw,2.6rem)] leading-[1.02] font-semibold tracking-[-0.02em]">
                 {project.name}
               </h3>
 
@@ -362,7 +362,7 @@ export default function WorkRail() {
       >
         02 — Work
       </motion.p>
-      <h2 className="mt-3 text-[clamp(1.8rem,4.4vw,3.4rem)] leading-none font-semibold tracking-[-0.04em]">
+      <h2 className="mt-3 text-[clamp(1.8rem,4.4vw,3.4rem)] leading-none font-semibold tracking-[-0.024em]">
         <KineticText text="Things I've built" as="span" stagger={0.018} />
       </h2>
     </>

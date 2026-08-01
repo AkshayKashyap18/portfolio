@@ -13,9 +13,9 @@ export type TierConfig = {
 };
 
 const CONFIG: Record<Tier, TierConfig> = {
-  high: { tier: "high", particles: 42000, maxDpr: 1.75 },
-  mid: { tier: "mid", particles: 22000, maxDpr: 1.5 },
-  low: { tier: "low", particles: 9000, maxDpr: 1 },
+  high: { tier: "high", particles: 27000, maxDpr: 1.75 },
+  mid: { tier: "mid", particles: 15000, maxDpr: 1.5 },
+  low: { tier: "low", particles: 6500, maxDpr: 1 },
   off: { tier: "off", particles: 0, maxDpr: 1 },
 };
 

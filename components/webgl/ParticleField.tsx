@@ -20,6 +20,8 @@ const REST_FORCE = 0.85;
 const REST_RADIUS = 2.6;
 /** How long the release shockwave lasts. */
 const BURST_MS = 430;
+/** Life of the click ripple ring, in seconds — must match uRippleT's decay. */
+const RIPPLE_LIFE = 1.15;
 
 /** Dwell at each formation, then travel quickly between them. */
 function shapeTransition(t: number): number {
@@ -93,6 +95,8 @@ export default function ParticleField({ count, tier }: { count: number; tier: Ti
         uPointerRadius: { value: 2.6 },
         uVelocity: { value: 0 },
         uDrift: { value: 0.34 },
+        uRipple: { value: new THREE.Vector2(0, 0) },
+        uRippleT: { value: -1 },
         uOpacity: { value: 1 },
         uColorCool: { value: new THREE.Color("#7b5cff") },
         uColorWarm: { value: new THREE.Color("#35e0f0") },
@@ -248,6 +252,21 @@ export default function ParticleField({ count, tier }: { count: number; tier: Ti
       6,
       dt,
     );
+
+    // ── Click shockwave. A single ripple ring rides outward from the click
+    // point; the shader reads the elapsed time and expands the front. The
+    // origin is frozen at the click location (not the smoothed pointer), mapped
+    // into the same view-space units the pointer uses.
+    const rippleElapsed = (performance.now() - scrollState.rippleAt) / 1000;
+    if (rippleElapsed >= 0 && rippleElapsed <= RIPPLE_LIFE) {
+      (u.uRipple.value as THREE.Vector2).set(
+        (scrollState.rippleX * visibleWidth) / 2,
+        (scrollState.rippleY * visibleHeight) / 2,
+      );
+      u.uRippleT.value = rippleElapsed;
+    } else {
+      u.uRippleT.value = -1;
+    }
 
     // ── Scroll velocity feeds particle size, so the field "breathes" on scroll.
     s.velocity = THREE.MathUtils.damp(s.velocity, scrollState.velocity, 8, dt);

@@ -11,6 +11,7 @@ import SecretKeys from "@/components/layout/SecretKeys";
 import ConsoleGreeting from "@/components/layout/ConsoleGreeting";
 import ScrollProgress from "@/components/layout/ScrollProgress";
 import CursorGlow from "@/components/layout/CursorGlow";
+import ScrollVelocity from "@/components/providers/ScrollVelocity";
 import CommandPalette from "@/components/layout/CommandPalette";
 import Footer from "@/components/layout/Footer";
 import Hero from "@/components/sections/Hero";
@@ -68,6 +69,7 @@ export default function Home() {
       {!clean && <Preloader />}
       <ScrollProgress />
       <CursorGlow />
+      <ScrollVelocity />
       <Nav onOpenPalette={() => setPaletteOpen(true)} />
       {!clean && <BeatRail />}
       <CommandPalette

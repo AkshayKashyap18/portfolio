@@ -4,22 +4,37 @@
    Design tokens
    ───────────────────────────────────────────── */
 @theme {
-  --color-bg: #07070b;
-  --color-bg-soft: #0b0b12;
-  --color-text: #ededf2;
-  --color-muted: #9494a3;
+  /*
+    Warm neutrals, not cool ones. Every neutral here used to be pushed toward
+    blue — #07070b, #0b0b12, #ededf2, #9494a3 all carry a blue cast — and a
+    uniformly cool grey ramp on a dark site is one of the things that makes a
+    palette read as picked from a generator rather than mixed. These are the same
+    values rotated to the warm side of neutral, which reads as ink and paper
+    rather than as screen. Measured on the new ground: text 16.90:1,
+    muted 6.78:1, faint 5.00:1 — all still AA for body copy.
+  */
+  --color-bg: #0a0908;
+  --color-bg-soft: #11100e;
+  /*
+    Nudged brighter and a touch cleaner (#f0ece5 → #f6f3ec). The old value read
+    slightly grey/dull against the warm-dark ground; this lifts the primary
+    copy and headings so they feel crisp without going cold. Still warm, still
+    comfortably AA (now ~17.6:1 on --color-bg).
+  */
+  --color-text: #f6f3ec;
+  --color-muted: #9c968c;
   /*
     Twice-corrected. #55555f was the original; #6e6e7c was supposed to fix it but
     measures 4.01:1 on --color-bg, still under the 4.5:1 that AA asks for normal
     text — and this token is used almost exclusively on 10–11px mono labels, so
     the large-text allowance never applies. #7a7a88 measures 4.75:1.
   */
-  --color-faint: #7a7a88;
+  --color-faint: #847f75;
   --color-violet: #7c5cff;
   --color-cyan: #22d3ee;
   --color-lime: #a3e635;
 
-  --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-jb), ui-monospace, monospace;
 
@@ -45,6 +60,26 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+}
+
+/*
+  Headings get the display face.
+
+  This is new: the utility generated from --font-display had zero consumers, so
+  every heading was inheriting the body font and the token was decorative.
+
+  Optical sizing is left to the browser, which is the entire reason to ship the
+  opsz axis — the face is drawn differently at 11px and at 168px, and letting it
+  respond is a typographic decision the font itself makes better than a fixed
+  value would. Width is left at its designed default: overriding it on top of a
+  face that is already tightly fitted is what made the big headings collide.
+*/
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
 }
 
 ::selection {
@@ -86,12 +121,44 @@ body {
     0 20px 60px -20px rgb(0 0 0 / 0.6);
 }
 
+/*
+  Project cards carry dense body copy and sit over the brightest, busiest part
+  of the field, so the shared 4%-white glass film isn't enough contrast to read
+  against. This gives them a mostly-opaque dark backing while keeping the glass
+  blur, border and shadow. Unlayered on purpose: it wins over the `glass`
+  background without !important, and clean mode's `.glass { background: none
+  !important }` still overrides it, so light mode is unaffected.
+*/
+.panel-surface {
+  background:
+    linear-gradient(rgb(11 10 9 / 0.72), rgb(11 10 9 / 0.72)),
+    rgb(255 255 255 / 0.045);
+}
+
+/*
+  Velocity-reactive lean. The two custom properties are driven once per frame by
+  <ScrollVelocity>; applied only to contained reading columns so it reads as the
+  page leaning into a scroll, never as sheared body text (the vars sit at the
+  identity 0deg / 1 whenever the page is still). Compositor-only.
+*/
+.velocity-tilt {
+  transform: skewY(var(--sv-skew, 0deg)) scaleY(var(--sv-stretch, 1));
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
 @utility text-gradient {
+  /*
+    Brighter, more saturated accent. The mid violet and end cyan are lifted well
+    above the base tokens (#7c5cff / #22d3ee) so gradient words read luminous as
+    TEXT — thin letterforms swallow dark colour, which is what made accent
+    headings look dull. Warm-white lead keeps it anchored to the body copy.
+  */
   background-image: linear-gradient(
     100deg,
-    var(--color-text) 10%,
-    var(--color-violet) 50%,
-    var(--color-cyan) 90%
+    #fbf8f2 0%,
+    #9b7dff 42%,
+    #3ce0f2 94%
   );
   background-clip: text;
   -webkit-background-clip: text;
@@ -102,14 +169,28 @@ body {
   position: relative;
 }
 
-/* Film grain overlay so gradients read as texture, not banding */
+/*
+  Grain, doing dithering work rather than decoration.
+
+  What was here before was the canonical "grainy gradient" snippet that every
+  tutorial and every generated site ships, identical down to the parameters:
+  200x200, type='fractalNoise', baseFrequency='0.85', numOctaves='4',
+  opacity 0.032. Two things wrong with that. It is a fingerprint. And four
+  octaves of fractal noise across the full viewport is a documented paint cost on
+  iOS Safari, for a result that is mush at this opacity anyway.
+
+  This is turbulence rather than fractalNoise, which speckles instead of clouding,
+  at two octaves and a coarser frequency so individual grains are actually
+  resolvable. Opacity is up because the ground is now a warm dark, and warm darks
+  band worse at 8 bits than cool ones — the grain is free dithering against that.
+*/
 .grain-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
   pointer-events: none;
-  opacity: 0.032;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.72' numOctaves='2' seed='17' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
 /* Gradient hairline border on hover, via masked pseudo-element */
@@ -457,15 +538,28 @@ body[data-webgl="on"] .field-fallback {
   inset: 0;
   z-index: -5;
   pointer-events: none;
+  /*
+    Retuned twice over. The colour was hardcoded rgba(7, 7, 11) — the old cool
+    background — so after the neutrals were warmed it was laying a blue scrim
+    over a warm ground. And the radial was centred at 18% 72%, which left the
+    band around 45% of viewport height almost uncovered; that is exactly where
+    the hero's mono strip sits, and once bloom raised the field's luminance those
+    10px labels measured 3.12:1 against bright particles, under the 4.5:1 they
+    need. Measured at the p90 of actual painted background pixels, not guessed.
+
+    The radial now covers the reading column over most of its height. Kept as
+    gentle as the measurement allows — the field is the site's signature and
+    drowning it to protect text would be the wrong trade.
+  */
   background:
     radial-gradient(
-      120% 80% at 18% 72%,
-      rgba(7, 7, 11, 0.9) 0%,
-      rgba(7, 7, 11, 0.55) 38%,
-      transparent 68%
+      120% 100% at 16% 60%,
+      rgba(10, 9, 8, 0.92) 0%,
+      rgba(10, 9, 8, 0.66) 42%,
+      transparent 74%
     ),
-    linear-gradient(to bottom, rgba(7, 7, 11, 0.55) 0%, transparent 22%),
-    linear-gradient(to top, rgba(7, 7, 11, 0.7) 0%, transparent 30%);
+    linear-gradient(to bottom, rgba(10, 9, 8, 0.6) 0%, transparent 26%),
+    linear-gradient(to top, rgba(10, 9, 8, 0.72) 0%, transparent 30%);
 }
 
 /* ─────────────────────────────────────────────
@@ -519,15 +613,18 @@ body[data-clean="true"] * {
 }
 
 /*
-   Half-opacity de-emphasis reads fine on near-black but composites to ~2.6:1 on
-   white, which fails AA even at the relaxed large-text threshold. Give the
-   faded utilities an explicit solid tone instead of relying on alpha.
+   Alpha de-emphasis needs a floor on BOTH grounds, and the previous version of
+   this comment claimed half-opacity "reads fine on near-black" without measuring
+   it. It does not: --color-muted at 50% over the ground composites to #53504a,
+   which is 2.48:1, under the 3:1 large-text minimum. At 40% it was 1.96:1, and
+   that was the two words carrying the site's argument.
+
+   The dark side is now fixed at the call sites (/70 = 3.81:1, or solid at
+   6.78:1). This rule keeps the same floor on white, where the composite goes the
+   other way.
 */
-body[data-clean="true"] .text-muted\/50,
-body[data-clean="true"] .text-muted\/45,
-body[data-clean="true"] .text-muted\/40,
-body[data-clean="true"] .text-muted\/35 {
-  color: #71717a !important;
+body[data-clean="true"] .text-muted\/70 {
+  color: #6b6b74 !important;
 }
 body[data-clean="true"] .glass,
 body[data-clean="true"] .gradient-border {

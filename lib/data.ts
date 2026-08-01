@@ -20,7 +20,7 @@ export const profile = {
   pitch:
     "I build the backend and the intelligence behind it — production FastAPI services, and the LLM systems that make them think.",
   bio: [
-    "I'm an AI-focused CS undergraduate who ended up spending most of my time where the model meets the machine: designing backend services that are fast and secure, then wiring real language-model intelligence into them.",
+    "I'm an AI & Data Science undergraduate who ended up spending most of my time where the model meets the machine: designing backend services that are fast and secure, then wiring real language-model intelligence into them.",
     "Day to day I ship production Python and FastAPI against Supabase and PostgreSQL — auth, role-based access, query paths that hold up under load — and build the AI layer on top: agentic workflows, LLM document extraction, embeddings and semantic search across OpenAI, Anthropic and Google models. Alongside that I've shipped three AI products of my own, end to end.",
   ],
 } as const;

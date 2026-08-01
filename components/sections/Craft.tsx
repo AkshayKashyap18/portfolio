@@ -44,12 +44,12 @@ export default function Craft() {
 
   return (
     <section id="stack" className="relative scroll-mt-24 px-6 py-32 md:py-40">
-      <div className="mx-auto w-full max-w-[1180px]">
+      <div className="velocity-tilt mx-auto w-full max-w-[1180px]">
         <p className="sda font-mono text-[10px] tracking-[0.28em] text-faint uppercase">
           03 — Craft
         </p>
 
-        <h2 className="mt-3 text-[clamp(1.8rem,4.4vw,3.4rem)] leading-none font-semibold tracking-[-0.04em]">
+        <h2 className="mt-3 text-[clamp(1.8rem,4.4vw,3.4rem)] leading-none font-semibold tracking-[-0.024em]">
           <KineticText text="What I work with" as="span" stagger={0.018} />
         </h2>
 

@@ -15,7 +15,7 @@ export const BEAT_IDS = ["top", "about", "work", "stack", "playground", "contact
  * type, never competition for it. Only the hero and the closing singularity get
  * to be assertive, and even then not much.
  */
-export const BEAT_OPACITY = [0.95, 0.6, 0.42, 0.55, 0.48, 1.0] as const;
+export const BEAT_OPACITY = [0.95, 0.52, 0.3, 0.48, 0.42, 1.0] as const;
 
 let anchors: number[] = [];
 /**

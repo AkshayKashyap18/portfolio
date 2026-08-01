@@ -44,7 +44,7 @@ export default function ConsoleGreeting() {
     row("formations", String(FORMATION_LABELS.length));
     row("device tier", tier.tier);
     row("dpr cap", String(dpr));
-    row("shader", "custom GLSL, no post-processing");
+    row("shader", "custom GLSL + selective bloom");
     row("network", "MLP + backprop, written from scratch");
 
     console.log(

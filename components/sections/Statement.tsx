@@ -35,17 +35,17 @@ export default function Statement() {
       id="about"
       className="relative flex min-h-[100svh] scroll-mt-24 items-center px-6 py-32"
     >
-      <div className="mx-auto w-full max-w-[1180px]">
+      <div className="velocity-tilt mx-auto w-full max-w-[1180px]">
         <p className="sda mb-10 font-mono text-[10px] tracking-[0.28em] text-faint uppercase">
           01 — Who
         </p>
 
         <motion.h2
           style={{ letterSpacing: spread }}
-          className="max-w-[19ch] text-[clamp(2.1rem,5.6vw,4.6rem)] leading-[1.02] font-semibold tracking-[-0.04em]"
+          className="max-w-[19ch] text-[clamp(2.1rem,5.6vw,4.6rem)] leading-[1.02] font-semibold tracking-[-0.024em]"
         >
           <KineticText text="I build backends" as="span" stagger={0.02} />{" "}
-          <span className="text-muted/40">
+          <span className="text-muted">
             <KineticText text="that think." as="span" delay={0.25} stagger={0.02} />
           </span>
         </motion.h2>

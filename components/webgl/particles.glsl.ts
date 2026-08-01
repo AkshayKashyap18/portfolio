@@ -34,6 +34,9 @@ uniform float uPointerRadius;
 uniform float uVelocity;
 uniform float uDrift;
 
+uniform vec2  uRipple;         // view-space origin of the click shockwave
+uniform float uRippleT;        // seconds since the click; < 0 when inactive
+
 uniform vec4  uNet[45];        // packed MLP parameters, see lib/mlp NET_LAYOUT
 uniform float uNetMix;        // 0 = ignore the network, 1 = fully driven by it
 uniform float uNetDepth;      // hidden layer count: 0 (linear), 1, 2 or 3
@@ -47,6 +50,7 @@ varying float vSparkle;
 varying float vNet;           // this particle's prediction, 0..1
 varying float vNetMix;
 varying float vRidge;         // proximity to the decision boundary
+varying float vRipple;        // strength of the click shockwave on this particle
 
 ${SIMPLEX_3D}
 
@@ -157,8 +161,14 @@ void main() {
   vec3 flow = curlNoise(pos * 0.24 + vec3(0.0, 0.0, uTime * 0.045));
   pos += flow * uDrift * (0.55 + fract(aSeed * 41.3) * 0.75);
 
-  // Slow global rotation for parallax.
-  float ang = uTime * 0.028;
+  // Slow global rotation for parallax — EXCEPT on formation 1. The "AK"
+  // wordmark and the typed-word easter egg both live in that slot, and text
+  // that slowly turns reads as a spinning sign rather than a name. Fade the
+  // rotation out by how much of formation 1 is currently on screen, so it stops
+  // dead on the letters and eases back in as you scroll away. textWeight is
+  // the already-smoothed morph weight, so there's no pop.
+  float textWeight = uWA[1] * (1.0 - uMorph) + uWB[1] * uMorph;
+  float ang = uTime * 0.028 * (1.0 - textWeight);
   mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
   pos.xz = rot * pos.xz;
 
@@ -192,6 +202,24 @@ void main() {
   // Heat tracks force magnitude, so a collapse and a burst both flare white.
   float heat = influence * clamp(abs(uPointerForce) * 0.5, 0.0, 1.6);
 
+  // ── Click shockwave. A ring expands from the click point at a constant
+  // speed; particles the front is passing over get shoved radially outward and
+  // flared white, so a single click sends a visible pulse rippling across the
+  // whole field — separate from the press-and-hold gravity well.
+  float ripple = 0.0;
+  if (uRippleT >= 0.0) {
+    vec2  toR   = mv.xy - uRipple;
+    float rd    = length(toR);
+    float front = uRippleT * 10.5;          // view-units/sec the ring travels
+    // A soft gaussian shell around the expanding wavefront.
+    float shell = exp(-pow((rd - front) / 1.35, 2.0));
+    // Rises in a couple of frames, decays over the ripple's ~1.1s life.
+    float env   = smoothstep(0.0, 0.05, uRippleT) * (1.0 - smoothstep(0.0, 1.1, uRippleT));
+    ripple = shell * env;
+    vec2 rDir = normalize(toR + vec2(0.0001));
+    mv.xy += rDir * ripple * 1.7;
+  }
+
   gl_Position = projectionMatrix * mv;
 
   // ── Size: perspective attenuation, plus a flare while travelling.
@@ -199,7 +227,8 @@ void main() {
   // Boundary particles grow, but capped — this is the only hard line in an
   // otherwise soft field, and it crosses the most text-heavy beat on the page.
   float sizeBoost = 1.0 + travel * 0.09 + heat * 1.4 + abs(uVelocity) * 0.0012
-                  + min(ridge * uNetMix * 1.6, 1.6);
+                  + min(ridge * uNetMix * 1.6, 1.6)
+                  + min(ripple * 1.5, 1.5);
 
   gl_PointSize = uSize * aScale * uPixelRatio * sizeBoost * (1.0 / max(-mv.z, 0.001));
 
@@ -216,6 +245,7 @@ void main() {
   vNet = pr;
   vNetMix = uNetMix;
   vRidge = ridge;
+  vRipple = ripple;
 }
 `;
 
@@ -235,6 +265,7 @@ varying float vSparkle;
 varying float vNet;
 varying float vNetMix;
 varying float vRidge;
+varying float vRipple;
 
 void main() {
   // Soft round sprite: wide falloff plus a tight core. Cheaper and crisper
@@ -246,11 +277,19 @@ void main() {
   // rendered point; a wide soft blob reads as stock bokeh.
   float halo = smoothstep(0.5, 0.0, d);
   float core = pow(halo, 6.0);
-  float body = halo * 0.2 + core * 1.0;
+  // A touch more body and a brighter core — the field was reading dim.
+  float body = halo * 0.28 + core * 1.08;
 
   // Base colour varies per particle across the violet→cyan ramp, so the field
   // reads as a spectrum instead of one flat blue.
   vec3 col = mix(uColorCool, uColorWarm, pow(vTint, 1.4));
+
+  // Sharpen the palette. The additive field over a warm-dark ground was landing
+  // muted; lift saturation and midtones so the violet→cyan reads vivid and
+  // crisp rather than gloomy. Bloom then only sharpens the highlights further.
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(lum), col, 1.28);   // +28% saturation
+  col = pow(col, vec3(0.88));        // lift midtones toward brighter
 
   // Where the network is driving, colour by its prediction instead: the two
   // classes become two territories, with the boundary blown out toward white.
@@ -260,13 +299,19 @@ void main() {
     col = mix(col, uColorHot, min(vRidge * vNetMix * 0.75, 0.75));
   }
 
+  // Click ripple: a vivid violet leading ring, blowing out to a white crest at
+  // the very peak of the wavefront. vRipple*vRipple keeps the shoulders violet.
+  col = mix(col, uColorCool * 1.7, min(vRipple * 0.75, 0.75));
+  col = mix(col, uColorHot, min(vRipple * vRipple * 0.9, 0.9));
+
   // Travelling particles heat up; the cursor blows them out toward white.
   col = mix(col, uColorHot, vTravel * 0.5);
   col = mix(col, uColorHot, vHeat * 0.9);
   col += uColorHot * vSparkle * 0.9;
 
-  // Depth fade keeps the far side of the field from muddying the near side.
-  float alpha = body * uOpacity * mix(1.0, 0.3, vDepth);
+  // Depth fade keeps the far side of the field from muddying the near side —
+  // but eased off, so the back of the field stays livelier than before.
+  float alpha = body * uOpacity * mix(1.0, 0.5, vDepth);
   alpha += core * vSparkle * 0.5;
 
   gl_FragColor = vec4(col, alpha);
