@@ -319,7 +319,7 @@ export default function NeuralTrainer() {
                   key={d}
                   type="button"
                   onClick={() => setDepth(d)}
-                  className={`rounded border px-1.5 py-0.5 transition-colors ${
+                  className={`inline-grid min-h-6 min-w-6 place-items-center rounded border px-1.5 py-0.5 transition-colors ${
                     depth === d
                       ? "border-cyan/50 bg-cyan/10 text-text"
                       : "border-white/10 hover:text-text"
@@ -339,7 +339,7 @@ export default function NeuralTrainer() {
                   key={u}
                   type="button"
                   onClick={() => setHidden(u)}
-                  className={`rounded border px-1.5 py-0.5 transition-colors ${
+                  className={`inline-grid min-h-6 min-w-6 place-items-center rounded border px-1.5 py-0.5 transition-colors ${
                     hidden === u
                       ? "border-cyan/50 bg-cyan/10 text-text"
                       : "border-white/10 hover:text-text"

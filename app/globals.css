@@ -109,6 +109,31 @@ h3,
   background: rgb(255 255 255 / 0.18);
 }
 
+/*
+   Short viewports — landscape phones, and any desktop window under ~560px tall.
+
+   The hero bottom-aligns its stack inside min-h-[100svh] with no top padding, so
+   as soon as the content is taller than the viewport it overflows UPWARD rather
+   than down: the name renders straight through the fixed nav pill and the eyebrow
+   row is cut off at the top edge. Reproduced at 844x390.
+
+   Scoped to a height query rather than folded into the heading's clamp, because
+   putting an svh term in that clamp would shrink the display size on ordinary
+   desktops too — 13vw already loses to 22svh at 1440x900, which is not the case
+   being fixed here.
+*/
+@media (max-height: 560px) {
+  #top {
+    padding-top: 6.75rem;
+  }
+  #top h1 {
+    font-size: clamp(2rem, 9.5svh, 4.5rem);
+  }
+  #top p {
+    font-size: 0.9rem;
+  }
+}
+
 /* ─────────────────────────────────────────────
    Utilities
    ───────────────────────────────────────────── */

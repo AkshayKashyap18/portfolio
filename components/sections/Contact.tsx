@@ -127,7 +127,7 @@ export default function Contact() {
               <dd className="mt-1.5">
                 <a
                   href={d.href}
-                  className="text-[14px] break-all text-muted transition-colors hover:text-text"
+                  className="inline-flex min-h-6 items-center text-[14px] break-all text-muted transition-colors hover:text-text"
                 >
                   {d.value}
                 </a>
