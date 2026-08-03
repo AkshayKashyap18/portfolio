@@ -1,113 +1,107 @@
 /*
-  Route-scoped résumé styling, print first.
+  Route-scoped résumé styling — a conventional document, not a web page.
 
-  This page exists because the PDF in public/ had drifted badly from the site. The
-  site said "F1 0.846 on a 118-page human gold set" and "600 pages ran with zero
-  errors at $0.0117 each"; the PDF contained no number about his work at all, and
-  opened with "Known for adaptability, clear communication, and thriving in
-  collaborative tech teams" — three unfalsifiable virtues where the evidence
-  should be. It also carried a broken sentence, a mangled project entry and
-  "Adobe UCS" left behind by whatever generated it.
+  The first version of this was rejected, and the reason is worth recording: it was
+  styled like the site. Mono uppercase section labels, a vermilion accent, the
+  display typeface on the name, quoted result blocks with coloured left borders,
+  accent-coloured bullet dots. All of that is the portfolio's visual language, and a
+  résumé is not the place for it — the reader is skimming for facts, and anything
+  that makes the document look designed makes it slower to read.
 
-  Generating the document from lib/data.ts instead means the two can no longer
-  disagree: the résumé and the work cards read from the same strings.
+  So this is deliberately plain: one typeface, black text, bold headings over a
+  hairline rule, ordinary disc bullets, and the section order a reader expects. That
+  is also what a parser expects, which matters when a résumé is read by software
+  before a human sees it.
 
-  Black on white, no gradients, no glass, nothing from the site's dark palette —
-  this is a document, and the only thing that matters is that it survives being
-  printed and skimmed in ninety seconds.
+  The content stays generated from lib/data.ts, so the document and the site's work
+  cards still read from the same strings and cannot drift apart.
 */
 
 @page {
   size: A4;
-  margin: 13mm 14mm;
+  margin: 15mm 16mm;
 }
 
 .cv {
-  --ink: #14130f;
-  --ink-soft: #45423b;
-  --ink-faint: #6b6760;
-  --rule: #d9d5cc;
-  --accent: #7a2f1c;
+  --ink: #000;
+  --ink-soft: #1a1a1a;
+  --ink-meta: #444;
 
   max-width: 210mm;
   margin: 0 auto;
-  padding: 24px 30px 40px;
+  padding: 30px 34px 44px;
   background: #fff;
   color: var(--ink);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 9.6pt;
-  line-height: 1.36;
-  text-rendering: optimizeLegibility;
+  /* One family throughout. Mixing a display face and a mono into a résumé is what
+     made the first attempt read as a web page rather than a document. */
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: 10.4pt;
+  line-height: 1.42;
 }
 
 /* ── Header ─────────────────────────────────────────────── */
 
 .cv-name {
-  font-family: var(--font-display), ui-sans-serif, sans-serif;
-  font-size: 24pt;
+  /*
+    Explicit, because globals.css sets font-family on h1/h2/h3 for the site's
+    display face and that rule reaches this page too. A résumé in a display
+    typeface is the thing this redesign exists to undo, so it has to be overridden
+    rather than inherited.
+  */
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: 21pt;
   font-weight: 700;
-  letter-spacing: -0.022em;
-  line-height: 1;
-  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
 }
 
 .cv-role {
-  margin-top: 5px;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 8.2pt;
-  letter-spacing: 0.17em;
-  text-transform: uppercase;
-  color: var(--accent);
+  margin-top: 2px;
+  font-size: 10.6pt;
+  font-weight: 600;
+  color: var(--ink-soft);
 }
 
+/* One line, pipe-separated — the format every reader recognises. */
 .cv-contact {
-  margin-top: 9px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px 14px;
-  font-size: 9.2pt;
+  margin-top: 5px;
+  font-size: 9.8pt;
   color: var(--ink-soft);
 }
 
 .cv-contact a {
   color: inherit;
   text-decoration: none;
-  border-bottom: 1px solid var(--rule);
+}
+
+.cv-contact span + span::before {
+  content: " | ";
+  color: var(--ink-meta);
 }
 
 /* ── Sections ───────────────────────────────────────────── */
 
 .cv-section {
-  margin-top: 13px;
-  /*
-    Deliberately NOT break-inside: avoid. It was, and that was what forced a
-    third page: "Selected production work" is three long entries, so once it no
-    longer fitted in the space left on page one the whole section moved to page
-    two and left half a page blank. Entries are the right granularity to keep
-    whole — a single project splitting across a page boundary is the thing worth
-    preventing, not a section.
-  */
-}
-
-.cv-section > h2 {
-  /* Never leave a heading stranded at the foot of a page. */
-  break-after: avoid;
+  margin-top: 15px;
 }
 
 .cv-h2 {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 8pt;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: 10.4pt;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ink);
-  padding-bottom: 4px;
-  border-bottom: 1.2px solid var(--ink);
+  padding-bottom: 2px;
+  border-bottom: 1px solid #000;
   margin-bottom: 7px;
 }
 
+/* Never strand a heading at the foot of a page. */
+.cv-section > h2 {
+  break-after: avoid;
+}
+
 .cv-summary {
-  font-size: 9.8pt;
   color: var(--ink-soft);
   text-wrap: pretty;
 }
@@ -115,7 +109,7 @@
 /* ── Entries ────────────────────────────────────────────── */
 
 .cv-entry {
-  margin-bottom: 9px;
+  margin-bottom: 10px;
   break-inside: avoid;
 }
 .cv-entry:last-child {
@@ -126,121 +120,108 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
+  gap: 14px;
 }
 
 .cv-entry-title {
-  font-weight: 650;
-  font-size: 10.2pt;
-  letter-spacing: -0.008em;
+  font-weight: 700;
+  font-size: 10.8pt;
 }
 
 .cv-entry-meta {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 8.4pt;
-  color: var(--ink-faint);
+  font-size: 9.8pt;
+  color: var(--ink-meta);
   white-space: nowrap;
 }
 
 .cv-entry-sub {
-  font-size: 9.4pt;
-  color: var(--ink-faint);
-  margin-top: 1px;
+  font-size: 10pt;
+  font-style: italic;
+  color: var(--ink-meta);
 }
 
 .cv-entry ul {
-  margin: 5px 0 0;
-  padding-left: 14px;
-  list-style: none;
+  margin: 3px 0 0;
+  padding-left: 17px;
+  list-style: disc;
 }
 
 .cv-entry li {
-  position: relative;
-  margin-bottom: 1.5px;
+  margin-bottom: 1px;
   color: var(--ink-soft);
   text-wrap: pretty;
 }
 
-.cv-entry li::before {
-  content: "";
-  position: absolute;
-  left: -11px;
-  top: 0.52em;
-  width: 3.5px;
-  height: 3.5px;
-  background: var(--accent);
-  border-radius: 50%;
+/*
+  The measured result and the role boundary are the two most useful lines in the
+  document, so they stay — but as ordinary sentences with a bold lead-in, not the
+  bordered callout blocks the first version used.
+*/
+.cv-line {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  text-wrap: pretty;
 }
-
-/* The measured result, set apart from the narrative bullets. */
-.cv-result {
-  margin-top: 5px;
-  padding-left: 9px;
-  border-left: 2px solid var(--accent);
-  font-size: 9.6pt;
+.cv-line b {
+  font-weight: 700;
   color: var(--ink);
 }
 
-.cv-role-note {
-  margin-top: 4px;
-  font-size: 9.4pt;
+.cv-stack {
+  margin-top: 2px;
+  font-size: 9.8pt;
+  color: var(--ink-meta);
+}
+.cv-stack b {
+  font-weight: 700;
   color: var(--ink-soft);
 }
-.cv-role-note b {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 7.8pt;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: var(--ink-faint);
-}
 
-.cv-stack {
-  margin-top: 4px;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 8.2pt;
-  color: var(--ink-faint);
-}
-
-/* ── Two-column blocks ──────────────────────────────────── */
-
-.cv-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px 26px;
-}
+/* ── Compact lists ──────────────────────────────────────── */
 
 .cv-skill-row {
   display: grid;
-  grid-template-columns: 8.6rem 1fr;
-  gap: 10px;
-  margin-bottom: 4px;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 8px;
+  margin-bottom: 2.5px;
 }
 .cv-skill-row dt {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 8pt;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  padding-top: 1px;
+  font-weight: 700;
 }
 .cv-skill-row dd {
   margin: 0;
   color: var(--ink-soft);
 }
 
+.cv-flat {
+  margin: 0;
+  padding-left: 17px;
+  list-style: disc;
+}
+.cv-flat li {
+  margin-bottom: 1px;
+  color: var(--ink-soft);
+}
+
 /* ── Screen affordances, never printed ──────────────────── */
+
+.cv-page {
+  min-height: 100svh;
+  background: #e9e7e2;
+  padding-bottom: 60px;
+}
 
 .cv-toolbar {
   max-width: 210mm;
   margin: 0 auto;
-  padding: 20px 30px 0;
+  padding: 18px 34px 0;
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 9px;
   align-items: center;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  color: #6b6760;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 12px;
+  color: #55524c;
 }
 
 .cv-toolbar button,
@@ -249,19 +230,13 @@
   align-items: center;
   min-height: 32px;
   padding: 0 13px;
-  border: 1px solid #cfcbc2;
-  border-radius: 999px;
+  border: 1px solid #b9b5ad;
+  border-radius: 4px;
   background: #fff;
-  color: #14130f;
+  color: #111;
   font: inherit;
   text-decoration: none;
   cursor: pointer;
-}
-
-.cv-page {
-  min-height: 100svh;
-  background: #f4f2ed;
-  padding-bottom: 60px;
 }
 
 @media print {
@@ -277,12 +252,13 @@
   .cv {
     padding: 0;
     max-width: none;
-    font-size: 9.3pt;
+    font-size: 10.1pt;
   }
   .cv-name {
-    font-size: 23pt;
+    font-size: 20pt;
   }
   a {
     color: inherit !important;
+    text-decoration: none !important;
   }
 }

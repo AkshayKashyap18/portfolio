@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "resume:pdf": "node scripts/resume-pdf.mjs"
+    "lint": "next lint"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.1",

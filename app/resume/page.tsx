@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   title: "Résumé",
   description: `${profile.name} — ${profile.roles[0]}, ${profile.location}.`,
   /*
-    Not indexed. The page carries a phone number and its purpose is to be printed
-    or sent as a link, not to rank. Flip this if it should be findable.
+    Not indexed. The page carries a phone number and exists to be printed or sent
+    as a link, not to rank. One line to change if that should differ.
   */
   robots: { index: false, follow: false },
 };
@@ -31,12 +31,14 @@ export const metadata: Metadata = {
 /**
  * The résumé, generated from lib/data.ts.
  *
- * A document rather than a page: black on white, no gradients, no glass, nothing
- * from the site's dark palette. Print with Ctrl/Cmd-P and it lays out to A4.
+ * Section order follows what a reader expects and what the existing PDF already
+ * used — summary, skills, education, experience, projects, achievements. An
+ * earlier version of this page led with experience and styled itself like the
+ * site; both were wrong for a document whose only job is to be skimmed quickly
+ * and parsed reliably.
  *
- * It exists because the PDF in public/ had drifted from the site badly enough to
- * work against him — see the reasoning in lib/resume.ts. Reading from the same
- * strings as the work cards means the two can no longer disagree.
+ * Reading from the same strings as the work cards is the point: the site and the
+ * résumé cannot end up describing the same year differently.
  */
 export default function ResumePage() {
   return (
@@ -44,7 +46,10 @@ export default function ResumePage() {
       <div className="cv-toolbar">
         <PrintButton />
         <Link href="/">← back to the site</Link>
-        <span>Prints to A4. Use “Save as PDF” in the print dialog.</span>
+        <a href={profile.resume} download>
+          Download the PDF
+        </a>
+        <span>Prints to A4 — choose “Save as PDF” in the print dialog.</span>
       </div>
 
       <article className="cv">
@@ -66,112 +71,7 @@ export default function ResumePage() {
         </section>
 
         <section className="cv-section">
-          <h2 className="cv-h2">Experience</h2>
-          <div className="cv-entry">
-            <div className="cv-entry-head">
-              <span className="cv-entry-title">
-                {resumeJob.role} — {resumeJob.company}
-              </span>
-              <span className="cv-entry-meta">
-                {resumeJob.start} — {resumeJob.end}
-              </span>
-            </div>
-            <p className="cv-entry-sub">{resumeJob.summary}</p>
-            <ul>
-              {resumeExperienceBullets.map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
-            <p className="cv-stack">{resumeJob.stack.join(" · ")}</p>
-          </div>
-        </section>
-
-        <section className="cv-section">
-          <h2 className="cv-h2">Selected production work</h2>
-          {resumeProduction.map((p) => (
-            <div className="cv-entry" key={p.slug}>
-              <div className="cv-entry-head">
-                <span className="cv-entry-title">{p.name}</span>
-                <span className="cv-entry-meta">{p.period}</span>
-              </div>
-              <p className="cv-entry-sub">{p.tagline}</p>
-
-              {/* The measured outcome, given its own weight. */}
-              <p className="cv-result">{p.outcome}</p>
-
-              {/*
-                What was his and what was not. This is the most credible thing on
-                the page — a candidate volunteering the boundary of their own
-                contribution is doing something a generated document never does.
-              */}
-              {p.role && (
-                <p className="cv-role-note">
-                  <b>My role</b> {p.role}
-                </p>
-              )}
-
-              {/*
-                Two bullets, not three. Every entry carries an outcome, a role
-                note and a stack line already; a third narrative bullet pushed the
-                document to three pages, and page three of a résumé for one year
-                of experience does not get read.
-              */}
-              {p.bullets && p.bullets.length > 0 && (
-                <ul>
-                  {p.bullets.slice(0, 2).map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
-              )}
-
-              {/*
-                Where there is no personal-role note, show the team's numbers
-                instead — otherwise this project's measured results appear nowhere.
-                Labelled as the team's, which is how the site states them too.
-              */}
-              {!p.role && p.teamMetrics && p.teamMetrics.length > 0 && (
-                <p className="cv-role-note">
-                  <b>Team outcome</b>{" "}
-                  {p.teamMetrics.map((m) => `${m.value} ${m.label}`).join(" · ")}
-                </p>
-              )}
-
-              <p className="cv-stack">{p.stack.join(" · ")}</p>
-            </div>
-          ))}
-        </section>
-
-        <section className="cv-section">
-          <h2 className="cv-h2">Personal projects</h2>
-          {resumePersonal.map((p) => (
-            <div className="cv-entry" key={p.slug}>
-              <div className="cv-entry-head">
-                <span className="cv-entry-title">
-                  {p.name} — {p.tagline}
-                </span>
-                <span className="cv-entry-meta">
-                  {p.repo ? (
-                    <a href={p.repo}>github.com/…/{p.repo.split("/").pop()}</a>
-                  ) : (
-                    p.period
-                  )}
-                </span>
-              </div>
-              <p className="cv-result">{p.outcome}</p>
-              {p.bullets && p.bullets.length > 0 && (
-                <ul>
-                  {p.bullets.slice(0, 2).map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
-              )}
-              <p className="cv-stack">{p.stack.join(" · ")}</p>
-            </div>
-          ))}
-        </section>
-
-        <section className="cv-section">
-          <h2 className="cv-h2">Technical skills</h2>
+          <h2 className="cv-h2">Technical Skills</h2>
           <dl>
             {skills.map((group) => (
               <div className="cv-skill-row" key={group.key}>
@@ -185,9 +85,9 @@ export default function ResumePage() {
         <section className="cv-section">
           <h2 className="cv-h2">Education</h2>
           {education.map((e) => (
-            <div className="cv-entry" key={e.degree} style={{ marginBottom: 6 }}>
+            <div className="cv-entry" key={e.degree} style={{ marginBottom: 5 }}>
               <div className="cv-entry-head">
-                <span className="cv-entry-title" style={{ fontSize: "10.2pt" }}>
+                <span className="cv-entry-title" style={{ fontSize: "10.4pt" }}>
                   {e.degree}
                 </span>
                 <span className="cv-entry-meta">
@@ -200,30 +100,117 @@ export default function ResumePage() {
         </section>
 
         <section className="cv-section">
-          <h2 className="cv-h2">Achievements &amp; certifications</h2>
-          <div className="cv-grid">
-            <div>
-              {achievements.map((a) => (
-                <p key={a.title} style={{ marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600 }}>{a.title}</span>
-                  <br />
-                  <span style={{ color: "var(--ink-faint)", fontSize: "9.2pt" }}>
-                    {a.detail}
-                  </span>
-                </p>
-              ))}
+          <h2 className="cv-h2">Work Experience</h2>
+          <div className="cv-entry">
+            <div className="cv-entry-head">
+              <span className="cv-entry-title">
+                {resumeJob.role}, {resumeJob.company}
+              </span>
+              <span className="cv-entry-meta">
+                {resumeJob.start} — {resumeJob.end}
+              </span>
             </div>
-            <div>
-              {certifications.map((c) => (
-                <p key={c.name} style={{ marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600 }}>{c.name}</span>{" "}
-                  <span style={{ color: "var(--ink-faint)", fontSize: "9.2pt" }}>
-                    — {c.issuer}
-                  </span>
-                </p>
+            <p className="cv-entry-sub">{resumeJob.summary}</p>
+            <ul>
+              {resumeExperienceBullets.map((b) => (
+                <li key={b}>{b}</li>
               ))}
-            </div>
+            </ul>
+            <p className="cv-stack">
+              <b>Stack:</b> {resumeJob.stack.join(", ")}
+            </p>
           </div>
+        </section>
+
+        <section className="cv-section">
+          <h2 className="cv-h2">Professional Projects</h2>
+          {resumeProduction.map((p) => (
+            <div className="cv-entry" key={p.slug}>
+              <div className="cv-entry-head">
+                <span className="cv-entry-title">{p.name}</span>
+                <span className="cv-entry-meta">{p.period}</span>
+              </div>
+              <p className="cv-entry-sub">{p.tagline}</p>
+
+              {p.bullets && p.bullets.length > 0 && (
+                <ul>
+                  {p.bullets.slice(0, 2).map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              )}
+
+              {/*
+                A bold lead-in rather than a coloured callout block: the same two
+                sentences that make this document worth reading, without styling
+                that announces itself as a web page.
+              */}
+              <p className="cv-line">
+                <b>Result:</b> {p.outcome}
+              </p>
+
+              {p.role && (
+                <p className="cv-line">
+                  <b>My role:</b> {p.role}
+                </p>
+              )}
+
+              {!p.role && p.teamMetrics && p.teamMetrics.length > 0 && (
+                <p className="cv-line">
+                  <b>Team outcome:</b>{" "}
+                  {p.teamMetrics.map((m) => `${m.value} ${m.label}`).join(", ")}
+                </p>
+              )}
+
+              <p className="cv-stack">
+                <b>Stack:</b> {p.stack.join(", ")}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        <section className="cv-section">
+          <h2 className="cv-h2">Personal Projects</h2>
+          {resumePersonal.map((p) => (
+            <div className="cv-entry" key={p.slug}>
+              <div className="cv-entry-head">
+                <span className="cv-entry-title">
+                  {p.name} — {p.tagline}
+                </span>
+                <span className="cv-entry-meta">
+                  {p.repo ? p.repo.replace("https://", "") : p.period}
+                </span>
+              </div>
+              {p.bullets && p.bullets.length > 0 && (
+                <ul>
+                  {p.bullets.slice(0, 2).map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="cv-stack">
+                <b>Stack:</b> {p.stack.join(", ")}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        <section className="cv-section">
+          <h2 className="cv-h2">Achievements</h2>
+          <ul className="cv-flat">
+            {achievements.map((a) => (
+              <li key={a.title}>
+                <b>{a.title}</b> — {a.detail}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="cv-section">
+          <h2 className="cv-h2">Certifications</h2>
+          <p className="cv-summary">
+            {certifications.map((c) => `${c.name} (${c.issuer})`).join(" · ")}
+          </p>
         </section>
       </article>
     </div>
