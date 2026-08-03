@@ -1,0 +1,288 @@
+/*
+  Route-scoped résumé styling, print first.
+
+  This page exists because the PDF in public/ had drifted badly from the site. The
+  site said "F1 0.846 on a 118-page human gold set" and "600 pages ran with zero
+  errors at $0.0117 each"; the PDF contained no number about his work at all, and
+  opened with "Known for adaptability, clear communication, and thriving in
+  collaborative tech teams" — three unfalsifiable virtues where the evidence
+  should be. It also carried a broken sentence, a mangled project entry and
+  "Adobe UCS" left behind by whatever generated it.
+
+  Generating the document from lib/data.ts instead means the two can no longer
+  disagree: the résumé and the work cards read from the same strings.
+
+  Black on white, no gradients, no glass, nothing from the site's dark palette —
+  this is a document, and the only thing that matters is that it survives being
+  printed and skimmed in ninety seconds.
+*/
+
+@page {
+  size: A4;
+  margin: 13mm 14mm;
+}
+
+.cv {
+  --ink: #14130f;
+  --ink-soft: #45423b;
+  --ink-faint: #6b6760;
+  --rule: #d9d5cc;
+  --accent: #7a2f1c;
+
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 24px 30px 40px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 9.6pt;
+  line-height: 1.36;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.cv-name {
+  font-family: var(--font-display), ui-sans-serif, sans-serif;
+  font-size: 24pt;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1;
+  font-optical-sizing: auto;
+}
+
+.cv-role {
+  margin-top: 5px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 8.2pt;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.cv-contact {
+  margin-top: 9px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  font-size: 9.2pt;
+  color: var(--ink-soft);
+}
+
+.cv-contact a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ── Sections ───────────────────────────────────────────── */
+
+.cv-section {
+  margin-top: 13px;
+  /*
+    Deliberately NOT break-inside: avoid. It was, and that was what forced a
+    third page: "Selected production work" is three long entries, so once it no
+    longer fitted in the space left on page one the whole section moved to page
+    two and left half a page blank. Entries are the right granularity to keep
+    whole — a single project splitting across a page boundary is the thing worth
+    preventing, not a section.
+  */
+}
+
+.cv-section > h2 {
+  /* Never leave a heading stranded at the foot of a page. */
+  break-after: avoid;
+}
+
+.cv-h2 {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 8pt;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-bottom: 4px;
+  border-bottom: 1.2px solid var(--ink);
+  margin-bottom: 7px;
+}
+
+.cv-summary {
+  font-size: 9.8pt;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+/* ── Entries ────────────────────────────────────────────── */
+
+.cv-entry {
+  margin-bottom: 9px;
+  break-inside: avoid;
+}
+.cv-entry:last-child {
+  margin-bottom: 0;
+}
+
+.cv-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.cv-entry-title {
+  font-weight: 650;
+  font-size: 10.2pt;
+  letter-spacing: -0.008em;
+}
+
+.cv-entry-meta {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 8.4pt;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.cv-entry-sub {
+  font-size: 9.4pt;
+  color: var(--ink-faint);
+  margin-top: 1px;
+}
+
+.cv-entry ul {
+  margin: 5px 0 0;
+  padding-left: 14px;
+  list-style: none;
+}
+
+.cv-entry li {
+  position: relative;
+  margin-bottom: 1.5px;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.cv-entry li::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 0.52em;
+  width: 3.5px;
+  height: 3.5px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+/* The measured result, set apart from the narrative bullets. */
+.cv-result {
+  margin-top: 5px;
+  padding-left: 9px;
+  border-left: 2px solid var(--accent);
+  font-size: 9.6pt;
+  color: var(--ink);
+}
+
+.cv-role-note {
+  margin-top: 4px;
+  font-size: 9.4pt;
+  color: var(--ink-soft);
+}
+.cv-role-note b {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 7.8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+
+.cv-stack {
+  margin-top: 4px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 8.2pt;
+  color: var(--ink-faint);
+}
+
+/* ── Two-column blocks ──────────────────────────────────── */
+
+.cv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 26px;
+}
+
+.cv-skill-row {
+  display: grid;
+  grid-template-columns: 8.6rem 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.cv-skill-row dt {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 8pt;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: 1px;
+}
+.cv-skill-row dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* ── Screen affordances, never printed ──────────────────── */
+
+.cv-toolbar {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 20px 30px 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: #6b6760;
+}
+
+.cv-toolbar button,
+.cv-toolbar a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid #cfcbc2;
+  border-radius: 999px;
+  background: #fff;
+  color: #14130f;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cv-page {
+  min-height: 100svh;
+  background: #f4f2ed;
+  padding-bottom: 60px;
+}
+
+@media print {
+  .cv-toolbar,
+  .no-print {
+    display: none !important;
+  }
+  .cv-page {
+    background: #fff;
+    padding: 0;
+    min-height: 0;
+  }
+  .cv {
+    padding: 0;
+    max-width: none;
+    font-size: 9.3pt;
+  }
+  .cv-name {
+    font-size: 23pt;
+  }
+  a {
+    color: inherit !important;
+  }
+}
