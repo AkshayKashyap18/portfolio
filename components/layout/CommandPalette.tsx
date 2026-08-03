@@ -11,7 +11,9 @@ import {
   Phone,
   Search,
   FileSpreadsheet,
+  FileText,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { navSections, profile, projects } from "@/lib/data";
 import { easeExpo } from "@/lib/motion";
@@ -35,6 +37,7 @@ export default function CommandPalette({ open, onClose, onToggleClean }: Props) 
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const [copied, setCopied] = useState(false);
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -115,9 +118,20 @@ export default function CommandPalette({ open, onClose, onToggleClean }: Props) 
         },
       },
       {
+        id: "resume-web",
+        label: "Read the résumé",
+        hint: "In the browser",
+        group: "Actions" as const,
+        icon: <FileText className="size-3.5" />,
+        run: () => {
+          onClose();
+          router.push("/resume");
+        },
+      },
+      {
         id: "resume",
         label: "Download résumé",
-        hint: "PDF",
+        hint: "PDF, 2 pages",
         group: "Actions",
         icon: <Download className="size-3.5" />,
         run: () => {
@@ -142,7 +156,7 @@ export default function CommandPalette({ open, onClose, onToggleClean }: Props) 
     ];
 
     return [...nav, ...proj, ...actions];
-  }, [go, onClose, onToggleClean, copied]);
+  }, [go, onClose, onToggleClean, copied, router]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
