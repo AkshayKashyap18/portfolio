@@ -4,4 +4,4 @@
  */
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-  "https://akshaykashyap.vercel.app";
+  "https://portfolio-seven-dun-88.vercel.app";

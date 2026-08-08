@@ -33,6 +33,24 @@ type Props = {
   onToggleClean: () => void;
 };
 
+/**
+ * Lowercase and strip diacritics before comparing.
+ *
+ * Two of the entries are labelled "Read the résumé" and "Download résumé", and a
+ * plain includes() meant typing "resume" — which is how almost everyone types it —
+ * matched neither of them. The most-wanted item in the palette was unsearchable.
+ *
+ * NFD splits an accented character into its base letter plus a combining mark, so
+ * removing the marks leaves "resume" to match "résumé" while an exact accented
+ * query still works.
+ */
+function fold(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
 export default function CommandPalette({ open, onClose, onToggleClean }: Props) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -159,13 +177,10 @@ export default function CommandPalette({ open, onClose, onToggleClean }: Props) 
   }, [go, onClose, onToggleClean, copied, router]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = fold(query.trim());
     if (!q) return items;
     return items.filter(
-      (i) =>
-        i.label.toLowerCase().includes(q) ||
-        i.hint?.toLowerCase().includes(q) ||
-        i.group.toLowerCase().includes(q),
+      (i) => fold(i.label).includes(q) || fold(i.hint ?? "").includes(q) || fold(i.group).includes(q),
     );
   }, [items, query]);
 
